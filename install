@@ -1,0 +1,13 @@
+#!/bin/bash
+# we need at least pip>=22.1
+# sudo pip install --upgrade pip
+
+# local
+pip install --upgrade pip
+pip install dplot
+
+# install mode
+#sudo -H pip install --break-system-packages --root-user-action=ignore .
+
+# dev (editable) mode:
+#sudo -H pip install --break-system-packages --root-user-action=ignore -e .
