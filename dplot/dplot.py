@@ -5,12 +5,18 @@ import sys
 import tempfile
 from collections.abc import Sized
 from dataclasses import dataclass
+from enum import Enum
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
 
 TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
+# https://tikz.dev/pgfplots/reference-markers
+LineStyle = Literal['solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
+'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
+LineColor = Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown', 'lime', 'olive',
+'orange', 'pink', 'purple', 'teal', 'violet']
 LatexCmdsDocClass = [r'\documentclass[class=IEEEtran]{standalone}']
 LatexCmdsAfterDocClass = [
     r'\usepackage{tikz,amsmath,siunitx}',
@@ -37,7 +43,10 @@ class AxisSetup:
 
 
 class LineSetup:
-    pass
+    def __init__(self, line_style: LineStyle = get_args(LineStyle)[0], line_color: LineColor = get_args(LineColor)[0], line_width: float = 1):
+        self.line_style: LineStyle = line_style
+        self.line_color: LineColor = line_color
+        self.line_width: float = line_width
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -48,6 +57,7 @@ class Figure:
         self._height: str = height
         self._axes = {'t': None, 'b': None, 'l': None, 'r': None}
         self._data: list[dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]] = []
+        self._basic_style = 'thick'
 
     @property
     def width(self):
@@ -71,7 +81,6 @@ class Figure:
         path_latex = os.path.abspath(path_latex)
         self._validate()
         out = _LatexOutput(self).exec()
-        print('\n'.join(out))
         with open(path_latex, 'w') as fp:
             fp.write('\n'.join(out))
 
@@ -126,6 +135,11 @@ class Figure:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class _LatexOutput:
+    class AxisMode(Enum):
+        HIDE = 0,  # draw nothing
+        SINGLE = 1,  # only init one side, e.g. left
+        BOTH = 2  # init one side and the opposite, e.g. left explicitly and right implicitly
+
     def __init__(self, fig: Figure):
         self.fig = fig
 
@@ -136,12 +150,15 @@ class _LatexOutput:
 
         # each axis (b,t,l,r) is only prepared if the first data set using this axis occurred
         # the same holds if the last data set occurs and the axis should be ended
-        for data, init_x_axis, init_y_axis in [data_bl, data_br, data_tl, data_tr]:
+        for data, ax_mode, ay_mode in [data_bl, data_br, data_tl, data_tr]:
+            if len(data) == 0:
+                continue
             ax: XAxis = cast(XAxis, data[0]['ax'])
             ay: YAxis = cast(YAxis, data[0]['ay'])
-            out += self.__create_axis_begin(ax, ay)
+            out += self.__create_axis_begin(ax, ay, ax_mode, ay_mode)
             for d in data:
-                out += self.__create_plot(self.fig._axes[d['ax']], self.fig._axes[d['ay']], d['dx'], d['dy'])
+                out += self.__create_plot(self.fig._axes[d['ax']], self.fig._axes[d['ay']], cast(TypeData, d['dx']), cast(TypeData, d['dy']),
+                                          cast(LineSetup, d['ls']))
             out += self.__create_axis_end()
         out += self.__create_doc_end()
         return out
@@ -156,7 +173,7 @@ class _LatexOutput:
         out += [r'\setlength\figurewidth{' + self.fig._width + r'}']
         out += [r'\setlength\figureheight{' + self.fig._height + r'}']
         out += [r'\begin{tikzpicture}[font=\normalsize]']
-        out += [r'\pgfplotsset{every axis/.append style={very thick},compat=1.18},']
+        out += [r'\pgfplotsset{every axis/.append style={' + self.fig._basic_style + r'},compat=1.18},']
         return out
 
     def __get_wrapped_data(self):
@@ -168,11 +185,12 @@ class _LatexOutput:
 
         # wrapping each data entry is associated with the start and/or begin of an x or y-axis
         def wrap_data(idxs: dict[str, tuple[int, int]], ax: XAxis, ay: YAxis):
-            data_idxs = [idx for idx, d in enumerate(self.fig._data) if d['ax'] ==ax and d['ay'] == ay]
-            data = [d for d in self.fig._data if d['ax'] ==ax and d['ay'] == ay]
+            data_idxs = [idx for idx, d in enumerate(self.fig._data) if d['ax'] == ax and d['ay'] == ay]
+            data = [d for d in self.fig._data if d['ax'] == ax and d['ay'] == ay]
             return data, idxs[ax][1] in data_idxs, idxs[ay][1] in data_idxs
-            # return [(tup, ( == idx, idxs[ax][1] == idx, idxs[ay][0] == idx, idxs[ay][1] == idx))
-            #         for idx, tup in enumerate(self.fig._data) if tup['ax'] == ax and tup['ay'] == ay]
+
+        def get_axis_mode(init: bool, multiple: bool):
+            return _LatexOutput.AxisMode.HIDE if not init else (_LatexOutput.AxisMode.SINGLE if multiple else _LatexOutput.AxisMode.BOTH)
 
         self.fig._data.sort(key=lambda data: data['ax'] + data['ay'])  # sort by b/t, l/r
 
@@ -183,9 +201,12 @@ class _LatexOutput:
             'r': (get_first_idx('r'), get_last_idx('r')),
         }
 
-        return wrap_data(idxs, 'b', 'l'), wrap_data(idxs, 'b', 'r'), wrap_data(idxs, 't', 'l'), wrap_data(idxs, 't', 'r')
+        datas = [wrap_data(idxs, 'b', 'l'), wrap_data(idxs, 'b', 'r'), wrap_data(idxs, 't', 'l'), wrap_data(idxs, 't', 'r')]
+        multiple_init_x = len([init_x for data, init_x, init_y in datas if init_x]) > 1
+        multiple_init_y = len([init_y for data, init_x, init_y in datas if init_y]) > 1
+        return [(data, get_axis_mode(init_x, multiple_init_x), get_axis_mode(init_y, multiple_init_y)) for data, init_x, init_y in datas]
 
-    def __create_axis_begin(self, ax: XAxis, ay: YAxis) -> list[str]:
+    def __create_axis_begin(self, ax: XAxis, ay: YAxis, ax_mode: AxisMode, ay_mode: AxisMode) -> list[str]:
         asx: AxisSetup = self.fig._axes[ax]
         asy: AxisSetup = self.fig._axes[ay]
         params = [
@@ -194,17 +215,27 @@ class _LatexOutput:
             f'height={self.fig._height}',
             f'xmin={self.__fmt_flt(asx.limits[0])}',
             f'xmax={self.__fmt_flt(asx.limits[1])}',
-            f'axis x line*=' + ('bottom' if ax == 'b' else 'top'),
-            f'axis y line*=' + ('left' if ay == 'l' else 'right'),
-            f'xlabel={asx.name},'
-            f'ylabel={asy.name},'
+            f'ymin={self.__fmt_flt(asy.limits[0])}',
+            f'ymax={self.__fmt_flt(asy.limits[1])}',
+            f'xlabel={{{asx.name}}}',
+            f'ylabel={{{asy.name}}}',
         ]
+        if ax_mode == _LatexOutput.AxisMode.SINGLE:
+            params += [f'axis x line*=' + ('bottom' if ax == 'b' else 'top')]
+        elif ax_mode == _LatexOutput.AxisMode.HIDE:
+            params += ['hide x axis=true']
+        if ay_mode == _LatexOutput.AxisMode.SINGLE:
+            params += [f'axis y line*=' + ('left' if ay == 'l' else 'right')]
+        elif ay_mode == _LatexOutput.AxisMode.HIDE:
+            params += ['hide y axis=true']
+
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
-    def __create_plot(self, asx: AxisSetup, asy: AxisSetup, dx: TypeData, dy: TypeData) -> list[str]:
+    def __create_plot(self, asx: AxisSetup, asy: AxisSetup, dx: TypeData, dy: TypeData, ls: LineSetup) -> list[str]:
         params_plot = [
-            f'color=black',
-            f'dotted',
+            f'color=' + ls.line_color,
+            ls.line_style,
+            f'line width={ls.line_width}pt',
             f'mark phase=0'
         ]
         params_table = [
