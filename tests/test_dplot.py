@@ -13,8 +13,8 @@ class DPlotTest(unittest.TestCase):
         fig.axes['t'] = AxisSetup('Test')
         fig.add_data('b', 'l', [0, 1, 2, 3, 4, 5], [4, 5, 4, 5, 4, 5])
         fig.add_data('b', 'r', [0, 1, 2, 3, 4, 5], [1, 1, 2, 1, 1, 1], LineSetup(line_style='dotted', line_width=2))
-        fig.add_data('t', 'l', [-2, -1, 0], [4, 6, 4])
-        fig.add_data('t', 'r', [-2, -1, 0], [0, 1, 0], LineSetup(line_color='black', line_width=0.5))
+        fig.add_data('t', 'l', [-2, -1, 0], [4, 6, 4], LineSetup(line_style='', marker='square', marker_repeat=2, marker_phase=2))
+        fig.add_data('t', 'r', [-2, -1, 0], [0, 1, 0], LineSetup(plot_color='black', line_width=0.5))
         fig.create_latex('test-file.tex', build=True, quiet=True)
 
         self.assertTrue(True)

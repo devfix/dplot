@@ -13,10 +13,14 @@ TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
 # https://tikz.dev/pgfplots/reference-markers
-LineStyle = Literal['solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
+LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
 'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
-LineColor = Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown', 'lime', 'olive',
+PlotColor = Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown', 'lime', 'olive',
 'orange', 'pink', 'purple', 'teal', 'violet']
+Marker = Literal[
+    '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
+    'triangle*', 'diamond', 'diamond*', 'halfdiamond*', 'halfsquare*', 'halfsquare left*', 'halfsquare right*', 'Mercedes star', 'Mercedes star flipped',
+    'halfcircle', 'halfcircle*', 'pentagon', 'pentagon*', 'ball', 'cube', 'cube*', '']
 LatexCmdsDocClass = [r'\documentclass[class=IEEEtran]{standalone}']
 LatexCmdsAfterDocClass = [
     r'\usepackage{tikz,amsmath,siunitx}',
@@ -43,10 +47,14 @@ class AxisSetup:
 
 
 class LineSetup:
-    def __init__(self, line_style: LineStyle = get_args(LineStyle)[0], line_color: LineColor = get_args(LineColor)[0], line_width: float = 1):
+    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_width: float = 1,
+                 marker: Marker = '', marker_repeat: int = 1, marker_phase: int = 0):
+        self.plot_color: PlotColor = plot_color
         self.line_style: LineStyle = line_style
-        self.line_color: LineColor = line_color
         self.line_width: float = line_width
+        self.marker: Marker = marker
+        self.marker_repeat: int = marker_repeat
+        self.marker_phase: int = marker_phase
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -233,11 +241,18 @@ class _LatexOutput:
 
     def __create_plot(self, asx: AxisSetup, asy: AxisSetup, dx: TypeData, dy: TypeData, ls: LineSetup) -> list[str]:
         params_plot = [
-            f'color=' + ls.line_color,
+            f'color=' + ls.plot_color,
             ls.line_style,
             f'line width={ls.line_width}pt',
-            f'mark phase=0'
+            f'mark={ls.marker}',
+            f'mark repeat={ls.marker_repeat}',
+            f'mark phase={ls.marker_phase}',
         ]
+        if len(ls.line_style) == 0:
+            params_plot += ['only marks']
+        if len(ls.marker) == 0:
+            params_plot += ['no markers']
+
         params_table = [
             f'row sep=newline',
             f'x expr=\\thisrowno{{0}}*{self.__fmt_flt(asx.scale)}',
