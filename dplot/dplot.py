@@ -3,15 +3,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sized
 from dataclasses import dataclass
 from enum import Enum
 from typing import Union, Literal, get_args, Collection, cast
+
+import numpy
 import numpy as np
+
+
+# https://tikz.dev/pgfplots/reference-markers
+
 
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
-# https://tikz.dev/pgfplots/reference-markers
 LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
 'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
 PlotColor = Union[str, Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown',
@@ -45,6 +49,7 @@ class AxisSetup:
     name: str = ''
     scale: float = 1
     log: bool = False
+    log_base: float = 10.0
     limits: Union[None, tuple[float, float]] = None
     grid_major_enable: bool = False
     grid_major_color: PlotColor = 'black'
@@ -60,6 +65,7 @@ class AxisSetup:
     tick_minor_thickness: PlotThickness = 'thin'
     tick_minor_color: PlotColor = 'gray'
     tick_minor_num: int = 0
+    padding: str = '1cm'
 
 
 class LineSetup:
@@ -178,6 +184,7 @@ class _LatexOutput:
 
     def exec(self):
         out = self.__create_doc_begin()
+        out += self.__create_padding()
         out += self.__create_background()
         for ax in get_args(XAxis):
             for ay in get_args(YAxis):
@@ -188,6 +195,14 @@ class _LatexOutput:
 
     def __fmt_flt(self, x: float) -> str:
         return f'{x:.20e}'
+
+    def __fmt_flt2(self, x: float) -> str:
+        '''
+        some parameter e.g. log basis do not accept the scientific format
+        :param x:
+        :return:
+        '''
+        return f'{x:.0f}'
 
     def __create_doc_begin(self) -> list[str]:
         out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
@@ -202,14 +217,42 @@ class _LatexOutput:
         out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
 
-    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup) -> list[str]:
+    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup, limits: Union[None, tuple[float, float]] = None, force_linear:bool = False) -> list[str]:
+        if limits is None:
+            limits = axis_setup.limits
         return [
             f'scale only axis',
+            f'{axis_kind}mode=' + ('log' if axis_setup.log and not force_linear else 'linear'),
+            f'log basis {axis_kind}={self.__fmt_flt2(axis_setup.log_base)}',
             f'width={self.fig.width}',
             f'height={self.fig.height}',
-            f'{axis_kind}min={self.__fmt_flt(axis_setup.limits[0])}',
-            f'{axis_kind}max={self.__fmt_flt(axis_setup.limits[1])}',
+            f'{axis_kind}min={self.__fmt_flt(limits[0])}',
+            f'{axis_kind}max={self.__fmt_flt(limits[1])}',
         ]
+
+    def __create_padding(self) -> list[str]:
+        out = ['']
+        out += ['%%%%%%%%%%%']
+        out += ['% padding %']
+        out += ['%%%%%%%%%%%']
+        for axis in get_args(XAxis) + get_args(YAxis):
+            axis_setup = self.fig.axes[axis]
+            axis_kind = self.fig.get_axis_kind(axis)
+            axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+            params = self.__get_axis_param(axis_kind, axis_setup, limits=(0, 1), force_linear=True)
+            params += [
+                f'{axis_kind_op}min=0',
+                f'{axis_kind_op}max=1',
+                r'xtick=\empty',
+                r'ytick=\empty',
+                f'hide {axis_kind_op} axis=true',
+                f'{axis_kind}tick style={{draw=none}}',
+                f'{axis_kind}label=' + (r'{\hphantom{-}}' if axis_kind == 'y' else r'{\vphantom{-}}'),
+                f'{axis_kind}label shift={axis_setup.padding}',
+                f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
+            ]
+            out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
+        return out
 
     def __create_background(self) -> list[str]:
         out = ['']
@@ -240,7 +283,7 @@ class _LatexOutput:
                 f'{axis_kind}tick=' + ('' if axis_setup.tick_enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
                 f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick_opposite else self.fig.get_axis_pos(axis)),
-                f'{axis_kind}tick distance=' + (str(axis_setup.tick_major_distance) if axis_setup.tick_major_distance is not None else r''),
+                f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick_major_distance) if axis_setup.tick_major_distance is not None else r''),
                 f'major {axis_kind} tick style={{{axis_setup.tick_major_thickness},color={axis_setup.tick_major_color}}}',
                 f'minor {axis_kind} tick style={{{axis_setup.tick_minor_thickness},color={axis_setup.tick_minor_color}}}',
                 f'minor {axis_kind} tick num={axis_setup.tick_minor_num}',
@@ -267,6 +310,8 @@ class _LatexOutput:
         params += [
             f'ymin={self.__fmt_flt(asy.limits[0])}',
             f'ymax={self.__fmt_flt(asy.limits[1])}',
+            f'ymode=' + ('log' if asy.log else 'linear'),
+            f'log basis y={self.__fmt_flt2(asy.log_base)}',
             r'hide x axis=true',
             r'hide y axis=true',
             r'xtick=\empty',
