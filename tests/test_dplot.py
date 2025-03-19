@@ -8,7 +8,7 @@ class DPlotTest(unittest.TestCase):
     def test_all_axes(self):
         fig = Figure('test-figure', background_color='gray!30')
         fig.axes['b'] = AxisSetup('freq', scale=1, tick_enable=True, tick_minor_thickness='very thin', tick_major_thickness='very thick', tick_minor_num=4,
-                                  grid_major_enable=True, grid_major_thickness='very thick', grid_minor_enable=True, grid_minor_color='blue', grid_minor_thickness='thin')
+                                  grid_major_enable=True, grid_major_thickness='very thick', grid_minor_enable=True, grid_minor_color='blue', grid_minor_thickness='thin', tick_minor_color='blue')
         fig.axes['l'] = AxisSetup('magnitude', tick_enable=True, log=True)
         fig.axes['r'] = AxisSetup('phase', tick_enable=False)
         fig.axes['t'] = AxisSetup('Test', scale=1, tick_enable=True, grid_major_enable=False, tick_minor_thickness='thin', tick_major_thickness='thick', tick_minor_num=1)

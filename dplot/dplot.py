@@ -49,7 +49,7 @@ class AxisSetup:
     name: str = ''
     scale: float = 1
     log: bool = False
-    log_base: float = 10.0
+    log_base: str = '10'  # no float, otherwise the number of digits is not clear
     limits: Union[None, tuple[float, float]] = None
     grid_major_enable: bool = False
     grid_major_color: PlotColor = 'black'
@@ -196,14 +196,6 @@ class _LatexOutput:
     def __fmt_flt(self, x: float) -> str:
         return f'{x:.20e}'
 
-    def __fmt_flt2(self, x: float) -> str:
-        '''
-        some parameter e.g. log basis do not accept the scientific format
-        :param x:
-        :return:
-        '''
-        return f'{x:.0f}'
-
     def __create_doc_begin(self) -> list[str]:
         out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
         out += ['% auto-generated using dplot %']
@@ -223,7 +215,7 @@ class _LatexOutput:
         return [
             f'scale only axis',
             f'{axis_kind}mode=' + ('log' if axis_setup.log and not force_linear else 'linear'),
-            f'log basis {axis_kind}={self.__fmt_flt2(axis_setup.log_base)}',
+            f'log basis {axis_kind}={axis_setup.log_base}',
             f'width={self.fig.width}',
             f'height={self.fig.height}',
             f'{axis_kind}min={self.__fmt_flt(limits[0])}',
@@ -311,7 +303,7 @@ class _LatexOutput:
             f'ymin={self.__fmt_flt(asy.limits[0])}',
             f'ymax={self.__fmt_flt(asy.limits[1])}',
             f'ymode=' + ('log' if asy.log else 'linear'),
-            f'log basis y={self.__fmt_flt2(asy.log_base)}',
+            f'log basis y={asy.log_base}',
             r'hide x axis=true',
             r'hide y axis=true',
             r'xtick=\empty',
