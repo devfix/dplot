@@ -15,8 +15,9 @@ YAxis = Literal['l', 'r']  # left, right
 # https://tikz.dev/pgfplots/reference-markers
 LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
 'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
-PlotColor = Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown', 'lime', 'olive',
-'orange', 'pink', 'purple', 'teal', 'violet']
+PlotColor = Union[str, Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown',
+'lime', 'olive', 'orange', 'pink', 'purple', 'teal', 'violet']]
+PlotThickness = Literal['very thin', 'thin', 'thick', 'very thick']
 Marker = Literal[
     '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
     'triangle*', 'diamond', 'diamond*', 'halfdiamond*', 'halfsquare*', 'halfsquare left*', 'halfsquare right*', 'Mercedes star', 'Mercedes star flipped',
@@ -44,16 +45,28 @@ class AxisSetup:
     scale: float = 1
     log: bool = False
     limits: Union[None, tuple[float, float]] = None
-    grid_major: bool = False
-    ticks: bool = True
+    grid_major_enable: bool = False
+    grid_major_color: PlotColor = 'black'
+    grid_major_thickness: PlotThickness = 'thin'
+    grid_minor_enable: bool = False
+    grid_minor_color: PlotColor = 'black'
+    grid_minor_thickness: PlotThickness = 'very thin'
+    tick_enable: bool = True  # enable / disable tick
+    tick_opposite: bool = False  # enable ticks on opposite axis
+    tick_major_thickness: PlotThickness = 'thin'
+    tick_major_color: PlotColor = 'black'
+    tick_major_distance: Union[float, None] = None
+    tick_minor_thickness: PlotThickness = 'thin'
+    tick_minor_color: PlotColor = 'gray'
+    tick_minor_num: int = 0
 
 
 class LineSetup:
-    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_width: float = 1,
+    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_thickness: PlotThickness = 'thin',
                  marker: Marker = '', marker_repeat: int = 1, marker_phase: int = 0):
         self.plot_color: PlotColor = plot_color
         self.line_style: LineStyle = line_style
-        self.line_width: float = line_width
+        self.line_thickness: PlotThickness = line_thickness
         self.marker: Marker = marker
         self.marker_repeat: int = marker_repeat
         self.marker_phase: int = marker_phase
@@ -61,12 +74,13 @@ class LineSetup:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, name: str, width: str = '5cm', height: str = '5cm', basic_style='thick'):
-        self.name: str = name
+    def __init__(self, title: str, width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white'):
+        self.title: str = title
         self.width: str = width
         self.height: str = height
-        self.basic_style: str = basic_style
-        self.axes = {'t': None, 'b': None, 'l': None, 'r': None}
+        self.basic_thickness: PlotThickness = basic_thickness
+        self.background_color: PlotColor = background_color
+        self.axes = dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)])
         self.data: list[dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]] = []
 
     def add_data(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
@@ -96,6 +110,17 @@ class Figure:
                 shutil.rmtree(path_tmp_dir)
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
+
+    def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
+        if val == 't':
+            return 'top'
+        elif val == 'l':
+            return 'left'
+        elif val == 'r':
+            return 'right'
+        elif val == 'b':
+            return 'bottom'
+        raise RuntimeError()
 
     def get_axis_kind(self, val: Union[XAxis, YAxis]) -> Literal['x', 'y']:
         return 'x' if val in get_args(XAxis) else ('y' if val in get_args(YAxis) else None)
@@ -133,7 +158,7 @@ class Figure:
                         mn = min(mn, axis_setup.scale * np.min(data['dy']))
                 axis_setup.limits = (mn, mx)
 
-                if axis_setup.grid_major and not axis_setup.ticks:
+                if axis_setup.grid_major_enable and not axis_setup.tick_enable:
                     raise RuntimeError('grid_major requires ticks to be enabled')
 
 
@@ -181,7 +206,7 @@ class _LatexOutput:
         out += [r'\setlength\figurewidth{' + self.fig.width + r'}']
         out += [r'\setlength\figureheight{' + self.fig.height + r'}']
         out += [r'\begin{tikzpicture}[font=\normalsize]']
-        out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_style + r'},compat=1.18},']
+        out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
 
     def __get_axis_param(self, axis_type: Literal['x', 'y'], axis_setup: AxisSetup) -> list[str]:
@@ -195,6 +220,7 @@ class _LatexOutput:
 
     def __create_background(self) -> list[str]:
         out = []
+        background_color_applied = False
         for axis, axis_setup in self.fig.axes.items():
             if axis_setup is None:
                 continue
@@ -203,16 +229,26 @@ class _LatexOutput:
             axis_kind = self.fig.get_axis_kind(axis)
             axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
             params = self.__get_axis_param(axis_kind, axis_setup)
+            if not background_color_applied:
+                params += [f'axis background/.style={{fill={self.fig.background_color}}}']
+                background_color_applied = True
             params += [
                 f'{axis_kind_op}min=0',
                 f'{axis_kind_op}max=1',
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
+                f'{axis_kind}majorgrids={str(axis_setup.grid_major_enable).lower()}',
+                f'major grid style={{{axis_setup.grid_major_thickness},color={axis_setup.grid_major_color}}}',
+                f'{axis_kind}minorgrids={str(axis_setup.grid_minor_enable).lower()}',
+                f'minor grid style={{{axis_setup.grid_minor_thickness},color={axis_setup.grid_minor_color}}}',
+                f'{axis_kind}tick=' + ('' if axis_setup.tick_enable else r'\empty'),  # enable / disable major tick
+                f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
+                f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick_opposite else self.fig.get_axis_pos(axis)),
+                f'{axis_kind}tick distance=' + (str(axis_setup.tick_major_distance) if axis_setup.tick_major_distance is not None else r''),
+                f'major {axis_kind} tick style={{{axis_setup.tick_major_thickness},color={axis_setup.tick_major_color}}}',
+                f'minor {axis_kind} tick style={{{axis_setup.tick_minor_thickness},color={axis_setup.tick_minor_color}}}',
+                f'minor {axis_kind} tick num={axis_setup.tick_minor_num}',
             ]
-            params += [f'{axis_kind_op}tick=' + r'\empty']
-            params += [f'{axis_kind}tick=' + ('' if axis_setup.ticks else r'\empty')]
-            if axis_setup.grid_major:
-                params += [f'{axis_kind}majorgrids']
             out += [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
 
@@ -247,8 +283,8 @@ class _LatexOutput:
         return [(data, get_axis_mode(init_x, multiple_init_x), get_axis_mode(init_y, multiple_init_y)) for data, init_x, init_y in datas]
 
     def __create_axis_begin(self, ax: XAxis, ay: YAxis, ax_mode: AxisMode, ay_mode: AxisMode) -> list[str]:
-        asx: AxisSetup = self.fig.axes[ax]
-        asy: AxisSetup = self.fig.axes[ay]
+        asx = cast(AxisSetup, self.fig.axes[ax])
+        asy = cast(AxisSetup, self.fig.axes[ay])
         params = [
             f'scale only axis',
             f'width={self.fig.width}',
@@ -269,9 +305,9 @@ class _LatexOutput:
         elif ay_mode == _LatexOutput.AxisMode.HIDE:
             params += ['hide y axis=true']
 
-        if asx.grid_major:
+        if asx.grid_major_enable:
             params += ['xmajorgrids']
-        if asy.grid_major:
+        if asy.grid_major_enable:
             params += ['ymajorgrids']
 
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
@@ -280,7 +316,7 @@ class _LatexOutput:
         params_plot = [
             f'color=' + ls.plot_color,
             ls.line_style,
-            f'line width={ls.line_width}pt',
+            f'line width={ls.line_thickness}pt',
             f'mark={ls.marker}',
             f'mark repeat={ls.marker_repeat}',
             f'mark phase={ls.marker_phase}',
