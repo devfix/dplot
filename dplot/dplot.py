@@ -9,7 +9,6 @@ from enum import Enum
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
 
-TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
 # https://tikz.dev/pgfplots/reference-markers
@@ -18,10 +17,12 @@ LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', '
 PlotColor = Union[str, Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown',
 'lime', 'olive', 'orange', 'pink', 'purple', 'teal', 'violet']]
 PlotThickness = Literal['very thin', 'thin', 'thick', 'very thick']
+LineWidth = str
 Marker = Literal[
     '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
     'triangle*', 'diamond', 'diamond*', 'halfdiamond*', 'halfsquare*', 'halfsquare left*', 'halfsquare right*', 'Mercedes star', 'Mercedes star flipped',
     'halfcircle', 'halfcircle*', 'pentagon', 'pentagon*', 'ball', 'cube', 'cube*', '']
+
 LatexCmdsDocClass = [r'\documentclass[class=IEEEtran]{standalone}']
 LatexCmdsAfterDocClass = [
     r'\usepackage{tikz,amsmath,siunitx}',
@@ -62,14 +63,18 @@ class AxisSetup:
 
 
 class LineSetup:
-    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_thickness: PlotThickness = 'thin',
+    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_width: LineWidth = '1pt',
                  marker: Marker = '', marker_repeat: int = 1, marker_phase: int = 0):
         self.plot_color: PlotColor = plot_color
         self.line_style: LineStyle = line_style
-        self.line_thickness: PlotThickness = line_thickness
+        self.line_width: LineWidth = line_width
         self.marker: Marker = marker
         self.marker_repeat: int = marker_repeat
         self.marker_phase: int = marker_phase
+
+
+TypeData = Collection  # requires type to be sized and iterable
+TypeDataDict = dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -80,8 +85,8 @@ class Figure:
         self.height: str = height
         self.basic_thickness: PlotThickness = basic_thickness
         self.background_color: PlotColor = background_color
-        self.axes = dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)])
-        self.data: list[dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]] = []
+        self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
+        self.data: list[TypeDataDict] = []
 
     def add_data(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
         assert len(dx) == len(dy)
@@ -130,7 +135,6 @@ class Figure:
 
     # noinspection PyTypeChecker
     def _validate(self):
-
         for data in self.data:
             # check for unset but referenced axes
             assert self.axes[data['ax']] is not None
@@ -147,7 +151,7 @@ class Figure:
             # check for empty axis limits and auto-detect them
             axis_setup: AxisSetup = self.axes[axis]
             if axis_setup is not None and axis_setup.limits is None:
-                mx = sys.float_info.min
+                mx = -sys.float_info.min
                 mn = sys.float_info.max
                 for data in self.data:
                     if data['ax'] == axis:
@@ -175,21 +179,9 @@ class _LatexOutput:
     def exec(self):
         out = self.__create_doc_begin()
         out += self.__create_background()
-
-        # data_bl, data_br, data_tl, data_tr = self.__get_wrapped_data()
-        #
-        # # each axis (b,t,l,r) is only prepared if the first data set using this axis occurred
-        # # the same holds if the last data set occurs and the axis should be ended
-        # for data, ax_mode, ay_mode in [data_bl, data_br, data_tl, data_tr]:
-        #     if len(data) == 0:
-        #         continue
-        #     ax: XAxis = cast(XAxis, data[0]['ax'])
-        #     ay: YAxis = cast(YAxis, data[0]['ay'])
-        #     out += self.__create_axis_begin(ax, ay, ax_mode, ay_mode)
-        #     for d in data:
-        #         out += self.__create_plot(self.fig.axes[d['ax']], self.fig.axes[d['ay']], cast(TypeData, d['dx']), cast(TypeData, d['dy']),
-        #                                   cast(LineSetup, d['ls']))
-        #     out += self.__create_axis_end()
+        for ax in get_args(XAxis):
+            for ay in get_args(YAxis):
+                out += self.__create_plot_group(ax, ay)
         out += self.__create_doc_end()
         return out
 
@@ -209,13 +201,13 @@ class _LatexOutput:
         out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
 
-    def __get_axis_param(self, axis_type: Literal['x', 'y'], axis_setup: AxisSetup) -> list[str]:
+    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup) -> list[str]:
         return [
             f'scale only axis',
             f'width={self.fig.width}',
             f'height={self.fig.height}',
-            f'{axis_type}min={self.__fmt_flt(axis_setup.limits[0])}',
-            f'{axis_type}max={self.__fmt_flt(axis_setup.limits[1])}',
+            f'{axis_kind}min={self.__fmt_flt(axis_setup.limits[0])}',
+            f'{axis_kind}max={self.__fmt_flt(axis_setup.limits[1])}',
         ]
 
     def __create_background(self) -> list[str]:
@@ -252,71 +244,35 @@ class _LatexOutput:
             out += [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
 
-    def __get_wrapped_data(self):
-        def get_first_idx(axis: Union[XAxis, YAxis]):
-            return next((idx for idx, data in enumerate(self.fig.data) if data[self.fig.get_axis_kind(axis)] == axis[1]), -1)
+    def __create_plot_group(self, ax: XAxis, ay: YAxis) -> list[str]:
+        out = []
+        data_selected = [d for d in self.fig.data if d['ax'] == ax and d['ay'] == ay]
+        if len(data_selected) > 0:
+            out += self.__create_axis_begin(ax, ay)
+            for data in data_selected:
+                out += self.__create_plot(ax, ay, data)
+            out += self.__create_axis_end()
+        return out
 
-        def get_last_idx(axis: Union[XAxis, YAxis]):
-            return next((idx for idx, data in reversed(list(enumerate(self.fig.data))) if data[self.fig.get_axis_kind(axis)] == axis[1]), -1)
-
-        # wrapping each data entry is associated with the start and/or begin of an x or y-axis
-        def wrap_data(idxs: dict[str, tuple[int, int]], ax: XAxis, ay: YAxis):
-            data_idxs = [idx for idx, d in enumerate(self.fig.data) if d['ax'] == ax and d['ay'] == ay]
-            data = [d for d in self.fig.data if d['ax'] == ax and d['ay'] == ay]
-            return data, idxs[ax][1] in data_idxs, idxs[ay][1] in data_idxs
-
-        def get_axis_mode(init: bool, multiple: bool):
-            return _LatexOutput.AxisMode.HIDE if not init else (_LatexOutput.AxisMode.SINGLE if multiple else _LatexOutput.AxisMode.BOTH)
-
-        self.fig.data.sort(key=lambda data: data['ax'] + data['ay'])  # sort by b/t, l/r
-
-        idxs = {
-            'b': (get_first_idx('b'), get_last_idx('b')),
-            't': (get_first_idx('t'), get_last_idx('t')),
-            'l': (get_first_idx('l'), get_last_idx('l')),
-            'r': (get_first_idx('r'), get_last_idx('r')),
-        }
-
-        datas = [wrap_data(idxs, 'b', 'l'), wrap_data(idxs, 'b', 'r'), wrap_data(idxs, 't', 'l'), wrap_data(idxs, 't', 'r')]
-        multiple_init_x = len([init_x for data, init_x, init_y in datas if init_x]) > 1
-        multiple_init_y = len([init_y for data, init_x, init_y in datas if init_y]) > 1
-        return [(data, get_axis_mode(init_x, multiple_init_x), get_axis_mode(init_y, multiple_init_y)) for data, init_x, init_y in datas]
-
-    def __create_axis_begin(self, ax: XAxis, ay: YAxis, ax_mode: AxisMode, ay_mode: AxisMode) -> list[str]:
-        asx = cast(AxisSetup, self.fig.axes[ax])
+    def __create_axis_begin(self, ax: XAxis, ay: YAxis) -> list[str]:
         asy = cast(AxisSetup, self.fig.axes[ay])
-        params = [
-            f'scale only axis',
-            f'width={self.fig.width}',
-            f'height={self.fig.height}',
-            f'xmin={self.__fmt_flt(asx.limits[0])}',
-            f'xmax={self.__fmt_flt(asx.limits[1])}',
+        params = self.__get_axis_param('x', self.fig.axes[ax])
+        params += [
             f'ymin={self.__fmt_flt(asy.limits[0])}',
             f'ymax={self.__fmt_flt(asy.limits[1])}',
-            f'xlabel={{{asx.name}}}',
-            f'ylabel={{{asy.name}}}',
+            r'hide x axis=true',
+            r'hide y axis=true',
+            r'xtick=\empty',
+            r'ytick=\empty',
         ]
-        if ax_mode == _LatexOutput.AxisMode.SINGLE:
-            params += [f'axis x line*=' + ('bottom' if ax == 'b' else 'top')]
-        elif ax_mode == _LatexOutput.AxisMode.HIDE:
-            params += ['hide x axis=true']
-        if ay_mode == _LatexOutput.AxisMode.SINGLE:
-            params += [f'axis y line*=' + ('left' if ay == 'l' else 'right')]
-        elif ay_mode == _LatexOutput.AxisMode.HIDE:
-            params += ['hide y axis=true']
-
-        if asx.grid_major_enable:
-            params += ['xmajorgrids']
-        if asy.grid_major_enable:
-            params += ['ymajorgrids']
-
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
-    def __create_plot(self, asx: AxisSetup, asy: AxisSetup, dx: TypeData, dy: TypeData, ls: LineSetup) -> list[str]:
+    def __create_plot(self, ax: XAxis, ay: YAxis, dd: TypeDataDict) -> list[str]:
+        ls = cast(LineSetup, dd['ls'])
         params_plot = [
             f'color=' + ls.plot_color,
             ls.line_style,
-            f'line width={ls.line_thickness}pt',
+            f'line width={ls.line_width}',
             f'mark={ls.marker}',
             f'mark repeat={ls.marker_repeat}',
             f'mark phase={ls.marker_phase}',
@@ -326,19 +282,19 @@ class _LatexOutput:
         if len(ls.marker) == 0:
             params_plot += ['no markers']
 
+        asx = cast(AxisSetup, self.fig.axes[ax])
+        asy = cast(AxisSetup, self.fig.axes[ay])
         params_table = [
             f'row sep=newline',
             f'x expr=\\thisrowno{{0}}*{self.__fmt_flt(asx.scale)}',
             f'y expr=\\thisrowno{{1}}*{self.__fmt_flt(asy.scale)}',
         ]
-        out = (
-                [r'\addplot ['] +
-                [f'  {p},' for p in params_plot] +
-                [r'] table ['] +
-                [f'  {p},' for p in params_table] +
-                [r']{']
-        )
-        for idx, (x, y) in enumerate(zip(dx, dy)):
+        out = [r'\addplot [']
+        out += [f'  {p},' for p in params_plot]
+        out += [r'] table [']
+        out += [f'  {p},' for p in params_table]
+        out += [r']{']
+        for x, y in zip(cast(TypeData, dd['dx']), cast(TypeData, dd['dy'])):
             out.append(f'  {self.__fmt_flt(x)} {self.__fmt_flt(y)}')
         out += [r'};']
         return out
