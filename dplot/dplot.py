@@ -44,6 +44,8 @@ class AxisSetup:
     scale: float = 1
     log: bool = False
     limits: Union[None, tuple[float, float]] = None
+    grid_major: bool = False
+    ticks: bool = True
 
 
 class LineSetup:
@@ -59,31 +61,19 @@ class LineSetup:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, name: str, width: str = '5.5cm', height: str = '5.5cm'):
-        self._name: str = name
-        self._width: str = width
-        self._height: str = height
-        self._axes = {'t': None, 'b': None, 'l': None, 'r': None}
-        self._data: list[dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]] = []
-        self._basic_style = 'thick'
-
-    @property
-    def width(self):
-        return self._width
-
-    @property
-    def height(self):
-        return self._height
-
-    @property
-    def axes(self):
-        return self._axes
+    def __init__(self, name: str, width: str = '5cm', height: str = '5cm', basic_style='thick'):
+        self.name: str = name
+        self.width: str = width
+        self.height: str = height
+        self.basic_style: str = basic_style
+        self.axes = {'t': None, 'b': None, 'l': None, 'r': None}
+        self.data: list[dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]] = []
 
     def add_data(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
         assert len(dx) == len(dy)
         if ls is None:
             ls = LineSetup()  # apply default line setup
-        self._data.append({'ax': ax, 'ay': ay, 'dx': dx, 'dy': dy, 'ls': ls})
+        self.data.append({'ax': ax, 'ay': ay, 'dx': dx, 'dy': dy, 'ls': ls})
 
     def create_latex(self, path_latex: str, build: bool = True, quiet=False):
         path_latex = os.path.abspath(path_latex)
@@ -107,31 +97,34 @@ class Figure:
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
 
-    def _get_axis_by_val(self, val: Union[XAxis, YAxis]):
-        return 'ax' if val in get_args(XAxis) else ('ay' if val in get_args(YAxis) else None)
+    def get_axis_kind(self, val: Union[XAxis, YAxis]) -> Literal['x', 'y']:
+        return 'x' if val in get_args(XAxis) else ('y' if val in get_args(YAxis) else None)
+
+    def get_opposite_axis_kind(self, axis_kind: Literal['x', 'y']) -> Literal['x', 'y']:
+        return 'x' if axis_kind == 'y' else ('y' if axis_kind == 'x' else None)
 
     # noinspection PyTypeChecker
     def _validate(self):
 
-        for data in self._data:
+        for data in self.data:
             # check for unset but referenced axes
-            assert self._axes[data['ax']] is not None
-            assert self._axes[data['ay']] is not None
+            assert self.axes[data['ax']] is not None
+            assert self.axes[data['ay']] is not None
 
             # check for empty data sets
             assert len(data['dx']) > 0
             assert len(data['dy']) > 0
 
-        for axis in self._axes.keys():
+        for axis in self.axes.keys():
             # check for illegal axis keys
             assert axis in get_args(XAxis) or axis in get_args(YAxis)
 
             # check for empty axis limits and auto-detect them
-            axis_setup: AxisSetup = self._axes[axis]
+            axis_setup: AxisSetup = self.axes[axis]
             if axis_setup is not None and axis_setup.limits is None:
                 mx = sys.float_info.min
                 mn = sys.float_info.max
-                for data in self._data:
+                for data in self.data:
                     if data['ax'] == axis:
                         mx = max(mx, axis_setup.scale * np.max(data['dx']))
                         mn = min(mn, axis_setup.scale * np.min(data['dx']))
@@ -139,6 +132,9 @@ class Figure:
                         mx = max(mx, axis_setup.scale * np.max(data['dy']))
                         mn = min(mn, axis_setup.scale * np.min(data['dy']))
                 axis_setup.limits = (mn, mx)
+
+                if axis_setup.grid_major and not axis_setup.ticks:
+                    raise RuntimeError('grid_major requires ticks to be enabled')
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -153,21 +149,22 @@ class _LatexOutput:
 
     def exec(self):
         out = self.__create_doc_begin()
+        out += self.__create_background()
 
-        data_bl, data_br, data_tl, data_tr = self.__get_wrapped_data()
-
-        # each axis (b,t,l,r) is only prepared if the first data set using this axis occurred
-        # the same holds if the last data set occurs and the axis should be ended
-        for data, ax_mode, ay_mode in [data_bl, data_br, data_tl, data_tr]:
-            if len(data) == 0:
-                continue
-            ax: XAxis = cast(XAxis, data[0]['ax'])
-            ay: YAxis = cast(YAxis, data[0]['ay'])
-            out += self.__create_axis_begin(ax, ay, ax_mode, ay_mode)
-            for d in data:
-                out += self.__create_plot(self.fig._axes[d['ax']], self.fig._axes[d['ay']], cast(TypeData, d['dx']), cast(TypeData, d['dy']),
-                                          cast(LineSetup, d['ls']))
-            out += self.__create_axis_end()
+        # data_bl, data_br, data_tl, data_tr = self.__get_wrapped_data()
+        #
+        # # each axis (b,t,l,r) is only prepared if the first data set using this axis occurred
+        # # the same holds if the last data set occurs and the axis should be ended
+        # for data, ax_mode, ay_mode in [data_bl, data_br, data_tl, data_tr]:
+        #     if len(data) == 0:
+        #         continue
+        #     ax: XAxis = cast(XAxis, data[0]['ax'])
+        #     ay: YAxis = cast(YAxis, data[0]['ay'])
+        #     out += self.__create_axis_begin(ax, ay, ax_mode, ay_mode)
+        #     for d in data:
+        #         out += self.__create_plot(self.fig.axes[d['ax']], self.fig.axes[d['ay']], cast(TypeData, d['dx']), cast(TypeData, d['dy']),
+        #                                   cast(LineSetup, d['ls']))
+        #     out += self.__create_axis_end()
         out += self.__create_doc_end()
         return out
 
@@ -175,32 +172,67 @@ class _LatexOutput:
         return f'{x:.20e}'
 
     def __create_doc_begin(self) -> list[str]:
-        out = LatexCmdsDocClass
+        out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
+        out += ['% auto-generated using dplot %']
+        out += ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
+        out += LatexCmdsDocClass
         out += LatexCmdsAfterDocClass
         out += [r'\begin{document}']
-        out += [r'\setlength\figurewidth{' + self.fig._width + r'}']
-        out += [r'\setlength\figureheight{' + self.fig._height + r'}']
+        out += [r'\setlength\figurewidth{' + self.fig.width + r'}']
+        out += [r'\setlength\figureheight{' + self.fig.height + r'}']
         out += [r'\begin{tikzpicture}[font=\normalsize]']
-        out += [r'\pgfplotsset{every axis/.append style={' + self.fig._basic_style + r'},compat=1.18},']
+        out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_style + r'},compat=1.18},']
+        return out
+
+    def __get_axis_param(self, axis_type: Literal['x', 'y'], axis_setup: AxisSetup) -> list[str]:
+        return [
+            f'scale only axis',
+            f'width={self.fig.width}',
+            f'height={self.fig.height}',
+            f'{axis_type}min={self.__fmt_flt(axis_setup.limits[0])}',
+            f'{axis_type}max={self.__fmt_flt(axis_setup.limits[1])}',
+        ]
+
+    def __create_background(self) -> list[str]:
+        out = []
+        for axis, axis_setup in self.fig.axes.items():
+            if axis_setup is None:
+                continue
+            axis = cast(Union[XAxis, YAxis], axis)
+            axis_setup = cast(AxisSetup, axis_setup)
+            axis_kind = self.fig.get_axis_kind(axis)
+            axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+            params = self.__get_axis_param(axis_kind, axis_setup)
+            params += [
+                f'{axis_kind_op}min=0',
+                f'{axis_kind_op}max=1',
+                r'xticklabel=\empty',
+                r'yticklabel=\empty',
+            ]
+            params += [f'{axis_kind_op}tick=' + r'\empty']
+            params += [f'{axis_kind}tick=' + ('' if axis_setup.ticks else r'\empty')]
+            if axis_setup.grid_major:
+                params += [f'{axis_kind}majorgrids']
+            out += [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
 
     def __get_wrapped_data(self):
         def get_first_idx(axis: Union[XAxis, YAxis]):
-            return next((idx for idx, data in enumerate(self.fig._data) if data[self.fig._get_axis_by_val(axis)] == axis), -1)
+            return next((idx for idx, data in enumerate(self.fig.data) if data[self.fig.get_axis_kind(axis)] == axis[1]), -1)
 
         def get_last_idx(axis: Union[XAxis, YAxis]):
-            return next((idx for idx, data in reversed(list(enumerate(self.fig._data))) if data[self.fig._get_axis_by_val(axis)] == axis), -1)
+            return next((idx for idx, data in reversed(list(enumerate(self.fig.data))) if data[self.fig.get_axis_kind(axis)] == axis[1]), -1)
 
         # wrapping each data entry is associated with the start and/or begin of an x or y-axis
         def wrap_data(idxs: dict[str, tuple[int, int]], ax: XAxis, ay: YAxis):
-            data_idxs = [idx for idx, d in enumerate(self.fig._data) if d['ax'] == ax and d['ay'] == ay]
-            data = [d for d in self.fig._data if d['ax'] == ax and d['ay'] == ay]
+            data_idxs = [idx for idx, d in enumerate(self.fig.data) if d['ax'] == ax and d['ay'] == ay]
+            data = [d for d in self.fig.data if d['ax'] == ax and d['ay'] == ay]
             return data, idxs[ax][1] in data_idxs, idxs[ay][1] in data_idxs
 
         def get_axis_mode(init: bool, multiple: bool):
             return _LatexOutput.AxisMode.HIDE if not init else (_LatexOutput.AxisMode.SINGLE if multiple else _LatexOutput.AxisMode.BOTH)
 
-        self.fig._data.sort(key=lambda data: data['ax'] + data['ay'])  # sort by b/t, l/r
+        self.fig.data.sort(key=lambda data: data['ax'] + data['ay'])  # sort by b/t, l/r
 
         idxs = {
             'b': (get_first_idx('b'), get_last_idx('b')),
@@ -215,12 +247,12 @@ class _LatexOutput:
         return [(data, get_axis_mode(init_x, multiple_init_x), get_axis_mode(init_y, multiple_init_y)) for data, init_x, init_y in datas]
 
     def __create_axis_begin(self, ax: XAxis, ay: YAxis, ax_mode: AxisMode, ay_mode: AxisMode) -> list[str]:
-        asx: AxisSetup = self.fig._axes[ax]
-        asy: AxisSetup = self.fig._axes[ay]
+        asx: AxisSetup = self.fig.axes[ax]
+        asy: AxisSetup = self.fig.axes[ay]
         params = [
             f'scale only axis',
-            f'width={self.fig._width}',
-            f'height={self.fig._height}',
+            f'width={self.fig.width}',
+            f'height={self.fig.height}',
             f'xmin={self.__fmt_flt(asx.limits[0])}',
             f'xmax={self.__fmt_flt(asx.limits[1])}',
             f'ymin={self.__fmt_flt(asy.limits[0])}',
@@ -236,6 +268,11 @@ class _LatexOutput:
             params += [f'axis y line*=' + ('left' if ay == 'l' else 'right')]
         elif ay_mode == _LatexOutput.AxisMode.HIDE:
             params += ['hide y axis=true']
+
+        if asx.grid_major:
+            params += ['xmajorgrids']
+        if asy.grid_major:
+            params += ['ymajorgrids']
 
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
