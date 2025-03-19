@@ -182,6 +182,7 @@ class _LatexOutput:
         for ax in get_args(XAxis):
             for ay in get_args(YAxis):
                 out += self.__create_plot_group(ax, ay)
+        out += self.__create_overlay()
         out += self.__create_doc_end()
         return out
 
@@ -211,7 +212,10 @@ class _LatexOutput:
         ]
 
     def __create_background(self) -> list[str]:
-        out = []
+        out = ['']
+        out += ['%%%%%%%%%%%%%%']
+        out += ['% background %']
+        out += ['%%%%%%%%%%%%%%']
         background_color_applied = False
         for axis, axis_setup in self.fig.axes.items():
             if axis_setup is None:
@@ -241,20 +245,23 @@ class _LatexOutput:
                 f'minor {axis_kind} tick style={{{axis_setup.tick_minor_thickness},color={axis_setup.tick_minor_color}}}',
                 f'minor {axis_kind} tick num={axis_setup.tick_minor_num}',
             ]
-            out += [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
+            out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
 
     def __create_plot_group(self, ax: XAxis, ay: YAxis) -> list[str]:
-        out = []
+        out = ['']
+        out += ['%%%%%%%%%%%%%%%%%%']
+        out += [f'% plot group {ax}/{ay} %']
+        out += ['%%%%%%%%%%%%%%%%%%']
         data_selected = [d for d in self.fig.data if d['ax'] == ax and d['ay'] == ay]
         if len(data_selected) > 0:
-            out += self.__create_axis_begin(ax, ay)
+            out += self.__create_plot_begin(ax, ay)
             for data in data_selected:
-                out += self.__create_plot(ax, ay, data)
-            out += self.__create_axis_end()
+                out += self.__create_plot_content(ax, ay, data)
+            out += self.__create_plot_end()
         return out
 
-    def __create_axis_begin(self, ax: XAxis, ay: YAxis) -> list[str]:
+    def __create_plot_begin(self, ax: XAxis, ay: YAxis) -> list[str]:
         asy = cast(AxisSetup, self.fig.axes[ay])
         params = self.__get_axis_param('x', self.fig.axes[ax])
         params += [
@@ -267,7 +274,7 @@ class _LatexOutput:
         ]
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
-    def __create_plot(self, ax: XAxis, ay: YAxis, dd: TypeDataDict) -> list[str]:
+    def __create_plot_content(self, ax: XAxis, ay: YAxis, dd: TypeDataDict) -> list[str]:
         ls = cast(LineSetup, dd['ls'])
         params_plot = [
             f'color=' + ls.plot_color,
@@ -299,10 +306,31 @@ class _LatexOutput:
         out += [r'};']
         return out
 
-    def __create_axis_end(self) -> list[str]:
+    def __create_plot_end(self) -> list[str]:
         return [r'\end{axis}']
 
-    def __create_doc_end(self):
+    def __create_overlay(self) -> list[str]:
+        out = ['']
+        out += ['%%%%%%%%%%%']
+        out += ['% overlay %']
+        out += ['%%%%%%%%%%%']
+        for axis, axis_setup in self.fig.axes.items():
+            if axis_setup is not None:
+                axis_kind = self.fig.get_axis_kind(axis)
+                axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+                params = self.__get_axis_param(axis_kind, axis_setup)
+                params += [
+                    f'{axis_kind_op}min=0',
+                    f'{axis_kind_op}max=1',
+                    f'{axis_kind}tick style={{draw=none}}',
+                    f'hide {axis_kind_op} axis=true',
+                    f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
+                    r'axis on top=true',
+                ]
+                out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
+        return out
+
+    def __create_doc_end(self) -> list[str]:
         return [
             r'\end{tikzpicture}',
             r'\end{document}',
