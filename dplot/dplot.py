@@ -45,27 +45,38 @@ LatexCmdsAfterDocClass = [
 
 
 @dataclass
+class GridSetup:
+    major_enable: bool = False
+    major_thickness: PlotThickness = 'thin'
+    major_color: PlotColor = 'black'
+    minor_enable: bool = False
+    minor_color: PlotColor = 'black'
+    minor_thickness: PlotThickness = 'very thin'
+
+
+@dataclass
+class TickSetup:
+    enable: bool = True  # enable / disable tick
+    opposite: bool = False  # enable ticks on opposite axis
+    major_thickness: PlotThickness = 'thin'
+    major_color: PlotColor = 'black'
+    major_distance: Union[float, None] = None
+    minor_thickness: PlotThickness = 'thin'
+    minor_color: PlotColor = 'gray'
+    minor_num: int = 0
+
+
+@dataclass
 class AxisSetup:
-    name: str = ''
+    label: str = ''
+    label_shift: str = '0cm'
     scale: float = 1
     log: bool = False
     log_base: str = '10'  # no float, otherwise the number of digits is not clear
     limits: Union[None, tuple[float, float]] = None
-    grid_major_enable: bool = False
-    grid_major_color: PlotColor = 'black'
-    grid_major_thickness: PlotThickness = 'thin'
-    grid_minor_enable: bool = False
-    grid_minor_color: PlotColor = 'black'
-    grid_minor_thickness: PlotThickness = 'very thin'
-    tick_enable: bool = True  # enable / disable tick
-    tick_opposite: bool = False  # enable ticks on opposite axis
-    tick_major_thickness: PlotThickness = 'thin'
-    tick_major_color: PlotColor = 'black'
-    tick_major_distance: Union[float, None] = None
-    tick_minor_thickness: PlotThickness = 'thin'
-    tick_minor_color: PlotColor = 'gray'
-    tick_minor_num: int = 0
     padding: str = '1cm'
+    grid: GridSetup = GridSetup()
+    tick: TickSetup = TickSetup()
 
 
 class LineSetup:
@@ -168,7 +179,7 @@ class Figure:
                         mn = min(mn, axis_setup.scale * np.min(data['dy']))
                 axis_setup.limits = (mn, mx)
 
-                if axis_setup.grid_major_enable and not axis_setup.tick_enable:
+                if axis_setup.grid.major_enable and not axis_setup.tick.enable:
                     raise RuntimeError('grid_major requires ticks to be enabled')
 
 
@@ -209,13 +220,11 @@ class _LatexOutput:
         out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
 
-    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup, limits: Union[None, tuple[float, float]] = None, force_linear:bool = False) -> list[str]:
+    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup, limits: Union[None, tuple[float, float]] = None) -> list[str]:
         if limits is None:
             limits = axis_setup.limits
         return [
             f'scale only axis',
-            f'{axis_kind}mode=' + ('log' if axis_setup.log and not force_linear else 'linear'),
-            f'log basis {axis_kind}={axis_setup.log_base}',
             f'width={self.fig.width}',
             f'height={self.fig.height}',
             f'{axis_kind}min={self.__fmt_flt(limits[0])}',
@@ -229,10 +238,14 @@ class _LatexOutput:
         out += ['%%%%%%%%%%%']
         for axis in get_args(XAxis) + get_args(YAxis):
             axis_setup = self.fig.axes[axis]
+            if axis_setup is None:
+                continue
             axis_kind = self.fig.get_axis_kind(axis)
             axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
-            params = self.__get_axis_param(axis_kind, axis_setup, limits=(0, 1), force_linear=True)
+            params = self.__get_axis_param(axis_kind, axis_setup, limits=(0, 1))
             params += [
+                f'{axis_kind}mode=linear',
+                f'log basis {axis_kind}={axis_setup.log_base}',
                 f'{axis_kind_op}min=0',
                 f'{axis_kind_op}max=1',
                 r'xtick=\empty',
@@ -264,21 +277,25 @@ class _LatexOutput:
                 params += [f'axis background/.style={{fill={self.fig.background_color}}}']
                 background_color_applied = True
             params += [
+                f'{axis_kind}mode=' + ('log' if axis_setup.log else 'linear'),
+                f'log basis {axis_kind}={axis_setup.log_base}',
                 f'{axis_kind_op}min=0',
                 f'{axis_kind_op}max=1',
+                f'{axis_kind}label={{{axis_setup.label}}}',
+                f'{axis_kind}label shift={{{axis_setup.label_shift}}}',
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
-                f'{axis_kind}majorgrids={str(axis_setup.grid_major_enable).lower()}',
-                f'major grid style={{{axis_setup.grid_major_thickness},color={axis_setup.grid_major_color}}}',
-                f'{axis_kind}minorgrids={str(axis_setup.grid_minor_enable).lower()}',
-                f'minor grid style={{{axis_setup.grid_minor_thickness},color={axis_setup.grid_minor_color}}}',
-                f'{axis_kind}tick=' + ('' if axis_setup.tick_enable else r'\empty'),  # enable / disable major tick
+                f'{axis_kind}majorgrids={str(axis_setup.grid.major_enable).lower()}',
+                f'major grid style={{{axis_setup.grid.major_thickness},color={axis_setup.grid.major_color}}}',
+                f'{axis_kind}minorgrids={str(axis_setup.grid.minor_enable).lower()}',
+                f'minor grid style={{{axis_setup.grid.minor_thickness},color={axis_setup.grid.minor_color}}}',
+                f'{axis_kind}tick=' + ('' if axis_setup.tick.enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
-                f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick_opposite else self.fig.get_axis_pos(axis)),
-                f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick_major_distance) if axis_setup.tick_major_distance is not None else r''),
-                f'major {axis_kind} tick style={{{axis_setup.tick_major_thickness},color={axis_setup.tick_major_color}}}',
-                f'minor {axis_kind} tick style={{{axis_setup.tick_minor_thickness},color={axis_setup.tick_minor_color}}}',
-                f'minor {axis_kind} tick num={axis_setup.tick_minor_num}',
+                f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else self.fig.get_axis_pos(axis)),
+                f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
+                f'major {axis_kind} tick style={{{axis_setup.tick.major_thickness},color={axis_setup.tick.major_color}}}',
+                f'minor {axis_kind} tick style={{{axis_setup.tick.minor_thickness},color={axis_setup.tick.minor_color}}}',
+                f'minor {axis_kind} tick num={axis_setup.tick.minor_num}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
@@ -298,10 +315,13 @@ class _LatexOutput:
 
     def __create_plot_begin(self, ax: XAxis, ay: YAxis) -> list[str]:
         asy = cast(AxisSetup, self.fig.axes[ay])
-        params = self.__get_axis_param('x', self.fig.axes[ax])
+        axis_setup = self.fig.axes[ax]
+        params = self.__get_axis_param('x', axis_setup)
         params += [
             f'ymin={self.__fmt_flt(asy.limits[0])}',
             f'ymax={self.__fmt_flt(asy.limits[1])}',
+            f'xmode=' + ('log' if axis_setup.log else 'linear'),
+            f'log basis x={axis_setup.log_base}',
             f'ymode=' + ('log' if asy.log else 'linear'),
             f'log basis y={asy.log_base}',
             r'hide x axis=true',
@@ -359,6 +379,8 @@ class _LatexOutput:
                 params += [
                     f'{axis_kind_op}min=0',
                     f'{axis_kind_op}max=1',
+                    f'{axis_kind}mode=' + ('log' if axis_setup.log else 'linear'),
+                    f'log basis {axis_kind}={axis_setup.log_base}',
                     f'{axis_kind}tick style={{draw=none}}',
                     f'hide {axis_kind_op} axis=true',
                     f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
