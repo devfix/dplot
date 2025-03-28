@@ -111,27 +111,35 @@ class Figure:
             ls = LineSetup()  # apply default line setup
         self.data.append({'ax': ax, 'ay': ay, 'dx': dx, 'dy': dy, 'ls': ls})
 
-    def create_latex(self, path_latex: str, build: bool = True, quiet=False):
-        path_latex = os.path.abspath(path_latex)
+    def get_latex_code(self) -> list[str]:
         self._validate()
-        out = _LatexOutput(self).exec()
-        with open(path_latex, 'w') as fp:
-            fp.write('\n'.join(out))
+        return _LatexOutput(self).exec()
 
+    def create_latex(self, path_latex: str, build: bool = True, quiet=True) -> tuple[str, str]:
+        path_latex = os.path.abspath(os.path.realpath(path_latex))
+        name_pdf = os.path.splitext(os.path.basename(path_latex))[0] + '.pdf'
+        path_pdf = os.path.join(os.path.dirname(path_latex), name_pdf)
+        with open(path_latex, 'w') as fp:
+            fp.write('\n'.join(self.get_latex_code()))
         if build:
             path_tmp_dir = tempfile.mkdtemp()
             cmd = ['pdflatex', '-halt-on-error', path_latex]
-            sout = subprocess.DEVNULL if quiet else sys.stdout.buffer
-            subprocess.call(cmd, cwd=path_tmp_dir, stdout=sout, stderr=sout)
-            name_pdf = os.path.splitext(os.path.basename(path_latex))[0] + '.pdf'
+            proc = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
+            if not quiet:
+                for line in proc.stdout:
+                    print(line.decode('utf-8'), end='')
+            proc.wait()
             path_tmp_pdf = os.path.join(path_tmp_dir, name_pdf)
-            path_pdf = os.path.join(os.path.dirname(path_latex), name_pdf)
             if os.path.exists(path_tmp_pdf):
                 shutil.copy(path_tmp_pdf, path_pdf)
             else:
                 shutil.rmtree(path_tmp_dir)
+                if quiet:
+                    for line in proc.stdout:
+                        print(line.decode('utf-8'), end='', flush=True, file=sys.stderr)
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
+        return path_latex, path_pdf
 
     def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
         if val == 't':
