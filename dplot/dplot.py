@@ -81,6 +81,33 @@ class TickSetup:
         self.minor_num = minor_num
 
 
+class LegendSetup:
+    def __init__(
+            self,
+            enable: bool = True,
+            anchor: str = 'north east',
+            align: str = 'left',
+            cell_align: str = 'left',
+            at: tuple[float, float] = (0.98, 0.98),
+            scale: float = 0.8
+    ):
+        """
+        Create new legend setup.
+        :param enable: show / hide legend
+        :param anchor: based on which corner of the legend it gets positioned
+        :param align:
+        :param cell_align:
+        :param at: position of legend anchor, x and y value in range 0...1
+        :param scale: legend scale (size)
+        """
+        self.enable = enable
+        self.anchor = anchor
+        self.align = align
+        self.cell_align = cell_align
+        self.at = at
+        self.scale = scale
+
+
 class AxisSetup:
     def __init__(
             self,
@@ -117,7 +144,24 @@ class LineSetup:
 
 
 class Data:
-    def __init__(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
+    def __init__(
+            self,
+            ax: XAxis,
+            ay: YAxis,
+            dx: TypeData,
+            dy: TypeData,
+            label: str = '',
+            ls: Union[LineSetup, None] = None
+    ):
+        """
+        Construct new data set.
+        :param ax: axis of type x
+        :param ay: axis of type y
+        :param dx: data for x-axis
+        :param dy: data for y-axis
+        :param label: label string, supports latex
+        :param ls: line-setup
+        """
         assert len(dx) == len(dy)
         if ls is None:
             ls = LineSetup()  # apply default line setup
@@ -125,21 +169,28 @@ class Data:
         self.ay = ay
         self.dx = dx
         self.dy = dy
+        self.label = label
         self.ls = ls
+        self._id = None
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, title: str, width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white'):
+    def __init__(self, title: str, width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white',
+                 legend_setup: LegendSetup = LegendSetup()):
         self.title: str = title
         self.width: str = width
         self.height: str = height
         self.basic_thickness: PlotThickness = basic_thickness
         self.background_color: PlotColor = background_color
+        self.legend_setup = legend_setup
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
+        self._data_counter = 0
 
     def add(self, data: Data):
+        data._id = self._data_counter
+        self._data_counter += 1
         self.plot_data.append(data)
 
     def get_latex_code(self) -> list[str]:
@@ -160,6 +211,10 @@ class Figure:
                 for line in proc.stdout:
                     print(line.decode('utf-8'), end='')
             proc.wait()
+
+            # 2nd latex compilation run
+            subprocess.call(cmd, cwd=path_tmp_dir)
+
             path_tmp_pdf = os.path.join(path_tmp_dir, name_pdf)
             if os.path.exists(path_tmp_pdf):
                 shutil.copy(path_tmp_pdf, path_pdf)
@@ -240,6 +295,8 @@ class _LatexOutput:
             for ay in get_args(YAxis):
                 out += self.__create_plot_group(ax, ay)
         out += self.__create_overlay()
+        if self.fig.legend_setup.enable:
+            out += self.__create_legend()
         out += self.__create_doc_end()
         return out
 
@@ -259,8 +316,9 @@ class _LatexOutput:
         out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
 
-    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: AxisSetup, limits: Union[None, tuple[float, float]] = None) -> list[str]:
+    def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: Union[AxisSetup, None], limits: Union[None, tuple[float, float]] = None) -> list[str]:
         if limits is None:
+            assert axis_setup is not None
             limits = axis_setup.limits
         return [
             f'scale only axis',
@@ -378,6 +436,7 @@ class _LatexOutput:
             f'mark={data.ls.marker}',
             f'mark repeat={data.ls.marker_repeat}',
             f'mark phase={data.ls.marker_phase}',
+            f'mark options={{solid}}',  # prevent dashed markers etc.
         ]
         if len(data.ls.line_style) == 0:
             params_plot += ['only marks']
@@ -399,6 +458,7 @@ class _LatexOutput:
         for x, y in zip(data.dx, data.dy):
             out.append(f'  {self.__fmt_flt(x)} {self.__fmt_flt(y)}')
         out += [r'};']
+        out += [f'\\label{{dplot:{data._id}}}']
         return out
 
     def __create_plot_end(self) -> list[str]:
@@ -425,6 +485,40 @@ class _LatexOutput:
                     r'axis on top=true',
                 ]
                 out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
+        return out
+
+    def __create_legend(self) -> list[str]:
+        out = ['']
+        out += ['%%%%%%%%%%']
+        out += ['% legend %']
+        out += ['%%%%%%%%%%']
+        legend_style = [
+            f'at={{({self.__fmt_flt(self.fig.legend_setup.at[0])},{self.__fmt_flt(self.fig.legend_setup.at[1])})}}',
+            f'anchor={self.fig.legend_setup.anchor}',
+            f'legend cell align={self.fig.legend_setup.cell_align}',
+            f'align={self.fig.legend_setup.align}',
+            f'nodes={{scale={self.__fmt_flt(self.fig.legend_setup.scale)}, transform shape}}'
+        ]
+        params = self.__get_axis_param('x', None, limits=(0, 1))
+        params += [
+            f'ymin=0',
+            f'ymax=1',
+            f'xmode=linear',
+            f'hide x axis=true',
+            f'hide y axis=true',
+            r'axis on top=true',
+            r'legend style={' + ', '.join(legend_style) + r'}'
+        ]
+        out += [
+            r'\begin{axis}',
+            r'['
+        ]
+        out += [f'  {p},' for p in params]
+        out += [r']']
+        for data in self.fig.plot_data:
+            label = data.label if len(data.label) > 0 else str(data._id)
+            out.append(r'\addlegendimage{/pgfplots/refstyle=dplot:' + str(data._id) + r'}\addlegendentry{' + label + r'}')
+        out += [r'\end{axis}']
         return out
 
     def __create_doc_end(self) -> list[str]:
