@@ -11,6 +11,7 @@ run tests:<br/>
 - [ ] 1st order low-pass filter
 
 ## TODO
+- [ ] Better compilation error detection: evalue return code of both processes etc.
 - [ ] Titel
 - [ ] MWE
 - [ ] More examples
