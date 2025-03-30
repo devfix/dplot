@@ -7,6 +7,9 @@ run tests:<br/>
 `sudo -H pip install .`<br/>
 `sudo -H pip install git+git@github.com:devfix/dplot.git`
 
+## Examples / Tests
+- [ ] 1st order low-pass filter
+
 ## TODO
 - [ ] Titel
 - [ ] MWE
