@@ -3,16 +3,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
 from enum import Enum
 from typing import Union, Literal, get_args, Collection, cast
-
-import numpy
 import numpy as np
 
 # https://tikz.dev/pgfplots/reference-markers
 
 
+TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
 LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
@@ -118,8 +116,16 @@ class LineSetup:
         self.marker_phase: int = marker_phase
 
 
-TypeData = Collection  # requires type to be sized and iterable
-TypeDataDict = dict[str, Union[XAxis, YAxis, TypeData, TypeData, LineSetup]]
+class Data:
+    def __init__(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
+        assert len(dx) == len(dy)
+        if ls is None:
+            ls = LineSetup()  # apply default line setup
+        self.ax = ax
+        self.ay = ay
+        self.dx = dx
+        self.dy = dy
+        self.ls = ls
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -131,13 +137,10 @@ class Figure:
         self.basic_thickness: PlotThickness = basic_thickness
         self.background_color: PlotColor = background_color
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
-        self.data: list[TypeDataDict] = []
+        self.plot_data: list[Data] = []
 
-    def add_data(self, ax: XAxis, ay: YAxis, dx: TypeData, dy: TypeData, ls: Union[LineSetup, None] = None):
-        assert len(dx) == len(dy)
-        if ls is None:
-            ls = LineSetup()  # apply default line setup
-        self.data.append({'ax': ax, 'ay': ay, 'dx': dx, 'dy': dy, 'ls': ls})
+    def add(self, data: Data):
+        self.plot_data.append(data)
 
     def get_latex_code(self) -> list[str]:
         self._validate()
@@ -188,14 +191,14 @@ class Figure:
 
     # noinspection PyTypeChecker
     def _validate(self):
-        for data in self.data:
+        for data in self.plot_data:
             # check for unset but referenced axes
-            assert self.axes[data['ax']] is not None
-            assert self.axes[data['ay']] is not None
+            assert self.axes[data.ax] is not None
+            assert self.axes[data.ay] is not None
 
             # check for empty data sets
-            assert len(data['dx']) > 0
-            assert len(data['dy']) > 0
+            assert len(data.dx) > 0
+            assert len(data.dy) > 0
 
         for axis in self.axes.keys():
             # check for illegal axis keys
@@ -206,13 +209,13 @@ class Figure:
             if axis_setup is not None and axis_setup.limits is None:
                 mx = -sys.float_info.min
                 mn = sys.float_info.max
-                for data in self.data:
-                    if data['ax'] == axis:
-                        mx = max(mx, axis_setup.scale * np.max(data['dx']))
-                        mn = min(mn, axis_setup.scale * np.min(data['dx']))
-                    if data['ay'] == axis:
-                        mx = max(mx, axis_setup.scale * np.max(data['dy']))
-                        mn = min(mn, axis_setup.scale * np.min(data['dy']))
+                for data in self.plot_data:
+                    if data.ax == axis:
+                        mx = max(mx, axis_setup.scale * np.max(data.dx))
+                        mn = min(mn, axis_setup.scale * np.min(data.dx))
+                    if data.ay == axis:
+                        mx = max(mx, axis_setup.scale * np.max(data.dy))
+                        mn = min(mn, axis_setup.scale * np.min(data.dy))
                 axis_setup.limits = (mn, mx)
 
                 if axis_setup.grid.major_enable and not axis_setup.tick.enable:
@@ -341,7 +344,7 @@ class _LatexOutput:
         out += ['%%%%%%%%%%%%%%%%%%']
         out += [f'% plot group {ax}/{ay} %']
         out += ['%%%%%%%%%%%%%%%%%%']
-        data_selected = [d for d in self.fig.data if d['ax'] == ax and d['ay'] == ay]
+        data_selected = [data for data in self.fig.plot_data if data.ax == ax and data.ay == ay]
         if len(data_selected) > 0:
             out += self.__create_plot_begin(ax, ay)
             for data in data_selected:
@@ -367,19 +370,18 @@ class _LatexOutput:
         ]
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
-    def __create_plot_content(self, ax: XAxis, ay: YAxis, dd: TypeDataDict) -> list[str]:
-        ls = cast(LineSetup, dd['ls'])
+    def __create_plot_content(self, ax: XAxis, ay: YAxis, data: Data) -> list[str]:
         params_plot = [
-            f'color=' + ls.plot_color,
-            ls.line_style,
-            f'line width={ls.line_width}',
-            f'mark={ls.marker}',
-            f'mark repeat={ls.marker_repeat}',
-            f'mark phase={ls.marker_phase}',
+            f'color=' + data.ls.plot_color,
+            data.ls.line_style,
+            f'line width={data.ls.line_width}',
+            f'mark={data.ls.marker}',
+            f'mark repeat={data.ls.marker_repeat}',
+            f'mark phase={data.ls.marker_phase}',
         ]
-        if len(ls.line_style) == 0:
+        if len(data.ls.line_style) == 0:
             params_plot += ['only marks']
-        if len(ls.marker) == 0:
+        if len(data.ls.marker) == 0:
             params_plot += ['no markers']
 
         asx = cast(AxisSetup, self.fig.axes[ax])
@@ -394,7 +396,7 @@ class _LatexOutput:
         out += [r'] table [']
         out += [f'  {p},' for p in params_table]
         out += [r']{']
-        for x, y in zip(cast(TypeData, dd['dx']), cast(TypeData, dd['dy'])):
+        for x, y in zip(data.dx, data.dy):
             out.append(f'  {self.__fmt_flt(x)} {self.__fmt_flt(y)}')
         out += [r'};']
         return out
