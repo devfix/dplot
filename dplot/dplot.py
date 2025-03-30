@@ -10,7 +10,6 @@ from typing import Union, Literal, get_args, Collection, cast
 import numpy
 import numpy as np
 
-
 # https://tikz.dev/pgfplots/reference-markers
 
 
@@ -44,39 +43,68 @@ LatexCmdsAfterDocClass = [
 ]
 
 
-@dataclass
 class GridSetup:
-    major_enable: bool = False
-    major_thickness: PlotThickness = 'thin'
-    major_color: PlotColor = 'black'
-    minor_enable: bool = False
-    minor_color: PlotColor = 'black'
-    minor_thickness: PlotThickness = 'very thin'
+    def __init__(
+            self,
+            major_enable: bool = False,
+            major_thickness: PlotThickness = 'thin',
+            major_color: PlotColor = 'black',
+            minor_enable: bool = False,
+            minor_color: PlotColor = 'black',
+            minor_thickness: PlotThickness = 'very thin'
+    ):
+        self.major_enable = major_enable
+        self.major_thickness = major_thickness
+        self.major_color = major_color
+        self.minor_enable = minor_enable
+        self.minor_color = minor_color
+        self.minor_thickness = minor_thickness
 
 
-@dataclass
 class TickSetup:
-    enable: bool = True  # enable / disable tick
-    opposite: bool = False  # enable ticks on opposite axis
-    major_thickness: PlotThickness = 'thin'
-    major_color: PlotColor = 'black'
-    major_distance: Union[float, None] = None
-    minor_thickness: PlotThickness = 'thin'
-    minor_color: PlotColor = 'gray'
-    minor_num: int = 0
+    def __init__(
+            self,
+            enable: bool = True,  # enable / disable tick
+            opposite: bool = False,  # enable ticks on opposite axis
+            major_thickness: PlotThickness = 'thin',
+            major_color: PlotColor = 'black',
+            major_distance: Union[float, None] = None,
+            minor_thickness: PlotThickness = 'thin',
+            minor_color: PlotColor = 'gray',
+            minor_num: int = 0
+    ):
+        self.enable = enable
+        self.opposite = opposite
+        self.major_thickness = major_thickness
+        self.major_color = major_color
+        self.major_distance = major_distance
+        self.minor_thickness = minor_thickness
+        self.minor_color = minor_color
+        self.minor_num = minor_num
 
 
-@dataclass
 class AxisSetup:
-    label: str = ''
-    label_shift: str = '0cm'
-    scale: float = 1
-    log: bool = False
-    log_base: str = '10'  # no float, otherwise the number of digits is not clear
-    limits: Union[None, tuple[float, float]] = None
-    padding: str = '0cm'
-    grid: GridSetup = GridSetup()
-    tick: TickSetup = TickSetup()
+    def __init__(
+            self,
+            label: str = '',
+            label_shift: str = '0cm',
+            scale: float = 1,
+            log: bool = False,
+            log_base: str = '10',  # no float, otherwise the number of digits is not clear
+            limits: Union[None, tuple[float, float]] = None,
+            padding: str = '0cm',
+            grid: GridSetup = GridSetup(),
+            tick: TickSetup = TickSetup(),
+    ):
+        self.label = label
+        self.label_shift = label_shift
+        self.scale = scale
+        self.log = log
+        self.log_base = log_base
+        self.limits = limits
+        self.padding = padding
+        self.grid = grid
+        self.tick = tick
 
 
 class LineSetup:
