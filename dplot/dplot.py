@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 from enum import Enum
+from itertools import chain
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
 
@@ -206,6 +207,8 @@ class Figure:
         if build:
             path_tmp_dir = tempfile.mkdtemp()
             cmd = ['pdflatex', '-halt-on-error', path_latex]
+
+            # 1st latex compilation run
             proc = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
             if not quiet:
                 for line in proc.stdout:
@@ -213,15 +216,19 @@ class Figure:
             proc.wait()
 
             # 2nd latex compilation run
-            subprocess.call(cmd, cwd=path_tmp_dir)
+            proc2 = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
+            if not quiet:
+                for line in proc2.stdout:
+                    print(line.decode('utf-8'), end='')
+            proc2.wait()
 
             path_tmp_pdf = os.path.join(path_tmp_dir, name_pdf)
             if os.path.exists(path_tmp_pdf):
                 shutil.copy(path_tmp_pdf, path_pdf)
             else:
                 shutil.rmtree(path_tmp_dir)
-                if quiet:
-                    for line in proc.stdout:
+                if quiet:  # if quiet, no output so far. Due to that we report all output now,
+                    for line in chain(proc.stdout, proc2.stdout):
                         print(line.decode('utf-8'), end='', flush=True, file=sys.stderr)
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
