@@ -198,15 +198,17 @@ class Figure:
         self._validate()
         return _LatexOutput(self).exec()
 
-    def create_latex(self, path_latex: str, build: bool = True, quiet=True) -> tuple[str, str]:
+    def create_latex(self, path_latex: str, build: bool = True, create_svg=True, quiet=True) -> tuple[str, str]:
         path_latex = os.path.abspath(os.path.realpath(path_latex))
         name_pdf = os.path.splitext(os.path.basename(path_latex))[0] + '.pdf'
+        name_svg = os.path.splitext(os.path.basename(path_latex))[0] + '.svg'
         path_pdf = os.path.join(os.path.dirname(path_latex), name_pdf)
+        path_svg = os.path.join(os.path.dirname(path_latex), name_svg)
         with open(path_latex, 'w') as fp:
             fp.write('\n'.join(self.get_latex_code()))
         if build:
             path_tmp_dir = tempfile.mkdtemp()
-            cmd = ['pdflatex', '-halt-on-error', path_latex]
+            cmd = ['pdflatex', '-synctex=1', '-interaction=nonstopmode', path_latex]
 
             # 1st latex compilation run
             proc = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
@@ -232,6 +234,10 @@ class Figure:
                         print(line.decode('utf-8'), end='', flush=True, file=sys.stderr)
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
+
+            if create_svg:
+                cmd = ['pdf2svg', path_pdf, path_svg]
+                subprocess.call(cmd)
         return path_latex, path_pdf
 
     def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
@@ -487,10 +493,12 @@ class _LatexOutput:
                     f'{axis_kind}mode=' + ('log' if axis_setup.log else 'linear'),
                     f'log basis {axis_kind}={axis_setup.log_base}',
                     f'{axis_kind}tick style={{draw=none}}',
+                    f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
                     f'hide {axis_kind_op} axis=true',
                     f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
                     r'axis on top=true',
                 ]
+
                 out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
 
