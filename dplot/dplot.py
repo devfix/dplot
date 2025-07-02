@@ -188,6 +188,7 @@ class Figure:
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
         self._data_counter = 0
+        self._is_exported = False
 
     def add(self, data: Data):
         data._id = self._data_counter
@@ -198,12 +199,10 @@ class Figure:
         self._validate()
         return _LatexOutput(self).exec()
 
-    def create_latex(self, path_latex: str, build: bool = True, create_svg=True, quiet=True) -> tuple[str, str]:
-        path_latex = os.path.abspath(os.path.realpath(path_latex))
-        name_pdf = os.path.splitext(os.path.basename(path_latex))[0] + '.pdf'
-        name_svg = os.path.splitext(os.path.basename(path_latex))[0] + '.svg'
-        path_pdf = os.path.join(os.path.dirname(path_latex), name_pdf)
-        path_svg = os.path.join(os.path.dirname(path_latex), name_svg)
+    def export_latex(self, path: str, build: bool = True, quiet=True, cleanup=False):
+        filename = os.path.splitext(os.path.realpath(path))[0]
+        path_latex = filename + '.tex'
+        path_pdf = filename + '.pdf'
         with open(path_latex, 'w') as fp:
             fp.write('\n'.join(self.get_latex_code()))
         if build:
@@ -224,7 +223,7 @@ class Figure:
                     print(line.decode('utf-8'), end='')
             proc2.wait()
 
-            path_tmp_pdf = os.path.join(path_tmp_dir, name_pdf)
+            path_tmp_pdf = os.path.join(path_tmp_dir, os.path.basename(path_pdf))
             if os.path.exists(path_tmp_pdf):
                 shutil.copy(path_tmp_pdf, path_pdf)
             else:
@@ -235,10 +234,24 @@ class Figure:
                 raise RuntimeError('compilation failed')
             shutil.rmtree(path_tmp_dir)
 
-            if create_svg:
-                cmd = ['pdf2svg', path_pdf, path_svg]
-                subprocess.call(cmd)
-        return path_latex, path_pdf
+            if cleanup:
+                os.remove(path_latex)
+        self._is_exported = True
+
+    def export_pdf(self, path: str, quiet=True):
+        self.export_latex(path=path, build=True, quiet=quiet, cleanup=True)
+
+    def export_svg(self, path: str, quiet=True, force_pdf_generation=False):
+        # If during the lifetime of this instance no export was created,
+        # the pdf to svg conversion would process a deprecated file.
+        # Hence, the pdf generation is enforced.
+        if force_pdf_generation or not self._is_exported:
+            self.export_pdf(path=path, quiet=quiet)
+        filename = os.path.splitext(path)[0]
+        path_pdf = filename + '.pdf'
+        path_svg = filename + '.svg'
+        cmd = ['pdf2svg', path_pdf, path_svg]
+        subprocess.call(cmd)
 
     def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
         if val == 't':

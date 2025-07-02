@@ -18,8 +18,9 @@ class DPlotTest(unittest.TestCase):
         fig.axes['l'] = AxisSetup('y', scale=1, tick=ts)
         fig.add(Data('b', 'l', [-2, -1, 0, 1, 2], [5, 1, 0, 1, 5]))
 
-        _, path_pdf = fig.create_latex(f'{inspect.stack()[0][3]}.tex', build=True)
-        self.assertTrue(check_identical_pdf(path_pdf))
+        name = f'{inspect.stack()[0][3]}'
+        fig.export_latex(name + '.tex', build=True)
+        self.assertTrue(check_identical_pdf(name + '.pdf'))
 
     def test_all_axes(self):
         fig = Figure('test-figure', background_color='gray!30', legend_setup=LegendSetup(enable=False))
@@ -40,8 +41,9 @@ class DPlotTest(unittest.TestCase):
         fig.add(Data('t', 'l', [-2, -1, 0], [4, 6, 4], ls=LineSetup(line_style='solid', marker='square', marker_repeat=2, marker_phase=2)))
         fig.add(Data('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color='black', line_width='0.5')))
 
-        _, path_pdf = fig.create_latex(f'{inspect.stack()[0][3]}.tex', build=True)
-        self.assertTrue(check_identical_pdf(path_pdf))
+        name = f'{inspect.stack()[0][3]}'
+        fig.export_latex(name + '.tex', build=True)
+        self.assertTrue(check_identical_pdf(name + '.pdf'))
 
     def test_s_par(self):
         path = os.path.join(os.path.dirname(__file__), 'via250.txt')
@@ -61,5 +63,6 @@ class DPlotTest(unittest.TestCase):
         fig.add(Data('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi,
                      ls=LineSetup(line_style='dashed', marker='*', marker_repeat=20), label=r'$\angle S_{11}$'))
 
-        _, path_pdf = fig.create_latex(f'{inspect.stack()[0][3]}.tex', build=True)
-        self.assertTrue(check_identical_pdf(path_pdf))
+        name = f'{inspect.stack()[0][3]}'
+        fig.export_latex(name + '.tex', build=True)
+        self.assertTrue(check_identical_pdf(name + '.pdf'))
