@@ -1,3 +1,4 @@
+import math
 import os.path
 import shutil
 import subprocess
@@ -5,8 +6,9 @@ import sys
 import tempfile
 from enum import Enum
 from itertools import chain
-from typing import Union, Literal, get_args, Collection, cast
+from typing import Union, Literal, get_args, Collection, cast, Sized
 import numpy as np
+from samba.dcerpc.netlogon import netr_LogonSamLogon
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -135,13 +137,13 @@ class AxisSetup:
 
 class LineSetup:
     def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_width: LineWidth = '1pt',
-                 marker: Marker = '', marker_repeat: int = 1, marker_phase: int = 0):
+                 marker: Marker = '', marker_repeat: int | float = 1, marker_phase: int = 0):
         self.plot_color: PlotColor = plot_color
         self.line_style: LineStyle = line_style
         self.line_width: LineWidth = line_width
         self.marker: Marker = marker
-        self.marker_repeat: int = marker_repeat
-        self.marker_phase: int = marker_phase
+        self.marker_repeat: int = int(marker_repeat)
+        self.marker_phase: int = int(marker_phase)
 
 
 class Data:
@@ -173,6 +175,13 @@ class Data:
         self.label = label
         self.ls = ls
         self._id = None
+
+    def cfg_marker(self, phase_frac: float = 0.0, n_samples=0, n_markers: int = 5) -> 'Data':
+        if n_samples == 0:
+            n_samples = len(self.dx)
+        self.ls.marker_repeat = math.floor(n_samples / n_markers)
+        self.ls.marker_phase = round((phase_frac % 1) * n_samples / n_markers)
+        return self
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
@@ -238,20 +247,25 @@ class Figure:
                 os.remove(path_latex)
         self._is_exported = True
 
-    def export_pdf(self, path: str, quiet=True):
-        self.export_latex(path=path, build=True, quiet=quiet, cleanup=True)
+    def export_pdf(self, path: str, quiet=True, cleanup=True):
+        self.export_latex(path=path, build=True, quiet=quiet, cleanup=cleanup)
 
-    def export_svg(self, path: str, quiet=True, force_pdf_generation=False):
+    def export_svg(self, path: str, quiet=True, cleanup=True, force_pdf_generation=False, optimize=True):
         # If during the lifetime of this instance no export was created,
         # the pdf to svg conversion would process a deprecated file.
         # Hence, the pdf generation is enforced.
-        if force_pdf_generation or not self._is_exported:
-            self.export_pdf(path=path, quiet=quiet)
         filename = os.path.splitext(path)[0]
         path_pdf = filename + '.pdf'
+        path_svg_tmp = filename + '.tmp.svg'
         path_svg = filename + '.svg'
-        cmd = ['pdf2svg', path_pdf, path_svg]
+        if force_pdf_generation or not self._is_exported or not os.path.exists(path_pdf):
+            self.export_pdf(path=path, quiet=quiet, cleanup=cleanup)
+        cmd = ['pdf2svg', path_pdf, path_svg_tmp if optimize else path_svg]
         subprocess.call(cmd)
+        if optimize:
+            cmd = ['scour', '-i', path_svg_tmp, '-o', path_svg]
+            subprocess.call(cmd)
+            os.remove(path_svg_tmp)
 
     def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
         if val == 't':
