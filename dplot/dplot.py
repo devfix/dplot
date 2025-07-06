@@ -198,7 +198,8 @@ class Data:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, name: str, title: str = '', width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white',
+    def __init__(self, name: str, title: str = '', width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick',
+                 background_color: PlotColor = 'white',
                  legend_setup: LegendSetup = LegendSetup()):
         self.name: str = name
         self.title: str = title
@@ -216,13 +217,26 @@ class Figure:
         self._data_counter += 1
         self.plot_data.append(data)
 
+    def plot(
+            self,
+            ax: XAxis,
+            ay: YAxis,
+            dx: TypeData,
+            dy: TypeData,
+            label: str = '',
+            ls: Union[LineSetup, None] = None
+    ) -> Data:
+        data = Data(ax=ax, ay=ay, dx=dx, dy=dy, label=label, ls=ls)
+        self.add(data)
+        return data
+
     def get_latex_code(self) -> list[str]:
         self._validate()
         return _LatexOutput(self).exec()
 
     def export(self, path_directory: str, *types, quiet=True):
         types: list[ExportType] = list(types)
-        for t in  types:
+        for t in types:
             assert isinstance(t, ExportType)
         required_types = set(types)
         if ExportType.SVG in required_types:
