@@ -1,3 +1,4 @@
+import enum
 import math
 import os.path
 import shutil
@@ -6,9 +7,8 @@ import sys
 import tempfile
 from enum import Enum
 from itertools import chain
-from typing import Union, Literal, get_args, Collection, cast, Sized
+from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
-from samba.dcerpc.netlogon import netr_LogonSamLogon
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -42,6 +42,18 @@ LatexCmdsAfterDocClass = [
     r'\newlength\figurewidth',
     r'\newlength\figureheight',
 ]
+
+
+class Environment:
+    PATH_PDFLATEX = 'pdflatex'
+    PATH_PDF2SVG = 'pdf2svg'
+    PATH_SCOUR = 'scour'
+
+
+class ExportType(enum.Enum):
+    LATEX = enum.auto()
+    PDF = enum.auto()
+    SVG = enum.auto()
 
 
 class GridSetup:
@@ -186,8 +198,9 @@ class Data:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, title: str, width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white',
+    def __init__(self, name: str, title: str = '', width: str = '5cm', height: str = '5cm', basic_thickness: PlotThickness = 'thick', background_color: PlotColor = 'white',
                  legend_setup: LegendSetup = LegendSetup()):
+        self.name: str = name
         self.title: str = title
         self.width: str = width
         self.height: str = height
@@ -197,7 +210,6 @@ class Figure:
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
         self._data_counter = 0
-        self._is_exported = False
 
     def add(self, data: Data):
         data._id = self._data_counter
@@ -208,63 +220,81 @@ class Figure:
         self._validate()
         return _LatexOutput(self).exec()
 
-    def export_latex(self, path: str, build: bool = True, quiet=True, cleanup=False):
-        filename = os.path.splitext(os.path.realpath(path))[0]
-        path_latex = filename + '.tex'
-        path_pdf = filename + '.pdf'
-        with open(path_latex, 'w') as fp:
-            fp.write('\n'.join(self.get_latex_code()))
-        if build:
-            path_tmp_dir = tempfile.mkdtemp()
-            cmd = ['pdflatex', '-synctex=1', '-interaction=nonstopmode', path_latex]
+    def export(self, path_directory: str, *types, quiet=True):
+        types: list[ExportType] = list(types)
+        for t in  types:
+            assert isinstance(t, ExportType)
+        required_types = set(types)
+        if ExportType.SVG in required_types:
+            required_types.add(ExportType.PDF)
+        if ExportType.PDF in required_types:
+            required_types.add(ExportType.LATEX)
 
-            # 1st latex compilation run
-            proc = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
-            if not quiet:
-                for line in proc.stdout:
-                    print(line.decode('utf-8'), end='')
-            proc.wait()
+        path_latex = os.path.join(path_directory, self.name + '.tex')
+        path_pdf = os.path.join(path_directory, self.name + '.pdf')
+        path_svg = os.path.join(path_directory, self.name + '.svg')
 
-            # 2nd latex compilation run
-            proc2 = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
-            if not quiet:
-                for line in proc2.stdout:
-                    print(line.decode('utf-8'), end='')
-            proc2.wait()
+        if ExportType.LATEX in required_types:
+            with open(path_latex, 'w') as fp:
+                fp.write('\n'.join(self.get_latex_code()))
+        if ExportType.PDF in required_types:
+            self._cvt_latex_to_pdf(path_latex, path_pdf, quiet)
+        if ExportType.SVG in required_types:
+            self._cvt_pdf_to_svg(path_pdf, path_svg, quiet)
 
-            path_tmp_pdf = os.path.join(path_tmp_dir, os.path.basename(path_pdf))
-            if os.path.exists(path_tmp_pdf):
-                shutil.copy(path_tmp_pdf, path_pdf)
-            else:
-                shutil.rmtree(path_tmp_dir)
-                if quiet:  # if quiet, no output so far. Due to that we report all output now,
-                    for line in chain(proc.stdout, proc2.stdout):
-                        print(line.decode('utf-8'), end='', flush=True, file=sys.stderr)
-                raise RuntimeError('compilation failed')
+        if ExportType.LATEX not in types and os.path.exists(path_latex):
+            os.remove(path_latex)
+        if ExportType.PDF not in types and os.path.exists(path_pdf):
+            os.remove(path_pdf)
+        if ExportType.SVG not in types and os.path.exists(path_svg):
+            os.remove(path_svg)
+
+    def _cvt_latex_to_pdf(self, path_latex: str, path_pdf: str, quiet=True):
+        if shutil.which(Environment.PATH_PDFLATEX) is None:
+            raise FileNotFoundError(Environment.PATH_PDFLATEX)
+
+        path_tmp_dir = tempfile.mkdtemp()
+        cmd = [Environment.PATH_PDFLATEX, '-synctex=1', '-interaction=nonstopmode', path_latex]
+
+        # 1st latex compilation run
+        proc = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
+        if not quiet:
+            for line in proc.stdout:
+                print(line.decode('utf-8'), end='')
+        proc.wait()
+
+        # 2nd latex compilation run
+        proc2 = subprocess.Popen(cmd, cwd=path_tmp_dir, stdout=subprocess.PIPE, stderr=sys.stdout.buffer)
+        if not quiet:
+            for line in proc2.stdout:
+                print(line.decode('utf-8'), end='')
+        proc2.wait()
+
+        path_tmp_pdf = os.path.join(path_tmp_dir, os.path.basename(path_pdf))
+        if os.path.exists(path_tmp_pdf):
+            shutil.copy(path_tmp_pdf, path_pdf)
+        else:
             shutil.rmtree(path_tmp_dir)
+            if quiet:  # if quiet, no output so far. Due to that we report all output now,
+                for line in chain(proc.stdout, proc2.stdout):
+                    print(line.decode('utf-8'), end='', flush=True, file=sys.stderr)
+            raise RuntimeError('compilation failed')
+        shutil.rmtree(path_tmp_dir)
 
-            if cleanup:
-                os.remove(path_latex)
-        self._is_exported = True
+    def _cvt_pdf_to_svg(self, path_pdf: str, path_svg: str, quiet: bool):
+        if shutil.which(Environment.PATH_PDF2SVG) is None:
+            raise FileNotFoundError(Environment.PATH_PDF2SVG)
 
-    def export_pdf(self, path: str, quiet=True, cleanup=True):
-        self.export_latex(path=path, build=True, quiet=quiet, cleanup=cleanup)
+        path_svg_tmp = path_svg + '.tmp.svg'
+        cmd = [Environment.PATH_PDF2SVG, path_pdf, path_svg_tmp]
+        subprocess.call(cmd, stdout=subprocess.DEVNULL if quiet else sys.stdout.buffer, stderr=subprocess.DEVNULL if quiet else sys.stderr.buffer)
 
-    def export_svg(self, path: str, quiet=True, cleanup=True, force_pdf_generation=False, optimize=True):
-        # If during the lifetime of this instance no export was created,
-        # the pdf to svg conversion would process a deprecated file.
-        # Hence, the pdf generation is enforced.
-        filename = os.path.splitext(path)[0]
-        path_pdf = filename + '.pdf'
-        path_svg_tmp = filename + '.tmp.svg'
-        path_svg = filename + '.svg'
-        if force_pdf_generation or not self._is_exported or not os.path.exists(path_pdf):
-            self.export_pdf(path=path, quiet=quiet, cleanup=cleanup)
-        cmd = ['pdf2svg', path_pdf, path_svg_tmp if optimize else path_svg]
-        subprocess.call(cmd)
-        if optimize:
-            cmd = ['scour', '-i', path_svg_tmp, '-o', path_svg]
-            subprocess.call(cmd)
+        if shutil.which(Environment.PATH_SCOUR) is None:
+            print('warning: scour not found, skipping svg optimization', file=sys.stderr)
+            os.rename(path_svg_tmp, path_svg)
+        else:
+            cmd = [Environment.PATH_SCOUR, '-i', path_svg_tmp, '-o', path_svg]
+            subprocess.call(cmd, stdout=subprocess.DEVNULL if quiet else sys.stdout.buffer, stderr=subprocess.DEVNULL if quiet else sys.stderr.buffer)
             os.remove(path_svg_tmp)
 
     def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
