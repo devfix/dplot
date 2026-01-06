@@ -244,9 +244,11 @@ class Figure:
         if ExportType.PDF in required_types:
             required_types.add(ExportType.LATEX)
 
+        path_directory = os.path.abspath(path_directory)
         path_latex = os.path.join(path_directory, self.name + '.tex')
         path_pdf = os.path.join(path_directory, self.name + '.pdf')
         path_svg = os.path.join(path_directory, self.name + '.svg')
+        os.makedirs(path_directory, exist_ok=True)
 
         if ExportType.LATEX in required_types:
             with open(path_latex, 'w') as fp:
@@ -262,6 +264,13 @@ class Figure:
             os.remove(path_pdf)
         if ExportType.SVG not in types and os.path.exists(path_svg):
             os.remove(path_svg)
+
+        type_map = {
+            ExportType.LATEX: path_latex,
+            ExportType.PDF: path_pdf,
+            ExportType.SVG: path_svg
+        }
+        return tuple([type_map[t] for t in types])
 
     def _cvt_latex_to_pdf(self, path_latex: str, path_pdf: str, quiet=True):
         if shutil.which(Environment.PATH_PDFLATEX) is None:
