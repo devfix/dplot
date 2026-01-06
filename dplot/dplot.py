@@ -234,7 +234,7 @@ class Figure:
         self._validate()
         return _LatexOutput(self).exec()
 
-    def export(self, path_directory: str, *types, quiet=True):
+    def export(self, path_out_dir: str, *types, quiet=True):
         types: list[ExportType] = list(types)
         for t in types:
             assert isinstance(t, ExportType)
@@ -244,11 +244,11 @@ class Figure:
         if ExportType.PDF in required_types:
             required_types.add(ExportType.LATEX)
 
-        path_directory = os.path.abspath(path_directory)
-        path_latex = os.path.join(path_directory, self.name + '.tex')
-        path_pdf = os.path.join(path_directory, self.name + '.pdf')
-        path_svg = os.path.join(path_directory, self.name + '.svg')
-        os.makedirs(path_directory, exist_ok=True)
+        path_out_dir = os.path.abspath(path_out_dir)
+        path_latex = os.path.join(path_out_dir, self.name + '.tex')
+        path_pdf = os.path.join(path_out_dir, self.name + '.pdf')
+        path_svg = os.path.join(path_out_dir, self.name + '.svg')
+        os.makedirs(path_out_dir, exist_ok=True)
 
         if ExportType.LATEX in required_types:
             with open(path_latex, 'w') as fp:
