@@ -236,6 +236,8 @@ class Figure:
 
     def export(self, path_out_dir: str, *types, quiet=True):
         types: list[ExportType] = list(types)
+        if len(types) == 0:
+            raise RuntimeError('at least one output type is required')
         for t in types:
             assert isinstance(t, ExportType)
         required_types = set(types)
