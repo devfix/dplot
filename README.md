@@ -13,14 +13,13 @@ The aim is merely to provide convenient functions for the most common cases of p
 **Optional: run the tests**<br/>
 Clone the repo to somewhere on your machine
 ```bash
-cd <repo path>  # enter repo path
+git clone "https://github.com/devfix/dplot.git"  # download dplot repo, alternatively download the zip and extract
+cd dplot  # enter repo path
 python3 -m venv .venv  # create new venv
 source .venv/bin/activate  # enter venv
 pip install pytest pandas opencv-python  # install dependencies of the tests
 python3 -m pytest  # run tests
 ```
-
- and run `pytest` in the root directory of the repo.
 
 ## Examples / Tests
 - [ ] 1st order low-pass filter
