@@ -397,16 +397,19 @@ class _LatexOutput:
         out += self.__create_doc_end()
         return out
 
-    def __get_y_domain(self, limits: Union[None, tuple[float, float]]):
-        if limits is None:
-            return
+    def __get_y_domain(self, asy: AxisSetup):
+        if asy.limits is None:
+            return None
+        if asy.log:  # y domain does somehow not work for logarithmic plots
+            return None
+
         # pgfplot encounters a probem if values are way outside the limits
         # -> If we would just clip the data precisely to the limits, this can change the shape
         # of the plat drastically, especially for a low number of data points.
         # The overscale_limit is a workaround, setting it higher increases the quality
         # but at some point pgfplots just gives up does not render correctly.
-        mn = limits[0] / self.overscale_limit if limits[0] > 0 else limits[0] * self.overscale_limit
-        mx = limits[1] * self.overscale_limit if limits[1] > 0 else limits[1] / self.overscale_limit
+        mn = asy.limits[0] / self.overscale_limit if asy.limits[0] > 0 else asy.limits[0] * self.overscale_limit
+        mx = asy.limits[1] * self.overscale_limit if asy.limits[1] > 0 else asy.limits[1] / self.overscale_limit
         return mn, mx
 
     def __fmt_flt(self, x: float) -> str:
@@ -539,7 +542,7 @@ class _LatexOutput:
 
     def __create_plot_content(self, ax: XAxis, ay: YAxis, data: Data) -> list[str]:
         asy = cast(AxisSetup, self.fig.axes[ay])
-        y_domain = self.__get_y_domain(asy.limits)
+        y_domain = self.__get_y_domain(asy)
         params_plot = [
             f'color=' + data.ls.plot_color,
             data.ls.line_style,
