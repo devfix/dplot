@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 from enum import Enum
+from importlib.resources import read_text
 from itertools import chain
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
@@ -381,6 +382,7 @@ class _LatexOutput:
 
     def __init__(self, fig: Figure):
         self.fig = fig
+        self.overscale_limit = 1e10
 
     def exec(self):
         out = self.__create_doc_begin()
@@ -394,6 +396,18 @@ class _LatexOutput:
             out += self.__create_legend()
         out += self.__create_doc_end()
         return out
+
+    def __get_y_domain(self, limits: Union[None, tuple[float, float]]):
+        if limits is None:
+            return
+        # pgfplot encounters a probem if values are way outside the limits
+        # -> If we would just clip the data precisely to the limits, this can change the shape
+        # of the plat drastically, especially for a low number of data points.
+        # The overscale_limit is a workaround, setting it higher increases the quality
+        # but at some point pgfplots just gives up does not render correctly.
+        mn = limits[0] / self.overscale_limit if limits[0] > 0 else limits[0] * self.overscale_limit
+        mx = limits[1] * self.overscale_limit if limits[1] > 0 else limits[1] / self.overscale_limit
+        return mn, mx
 
     def __fmt_flt(self, x: float) -> str:
         return f'{x:.20e}'
@@ -524,6 +538,8 @@ class _LatexOutput:
         return [r'\begin{axis}', r'['] + [f'  {p},' for p in params] + [r']']
 
     def __create_plot_content(self, ax: XAxis, ay: YAxis, data: Data) -> list[str]:
+        asy = cast(AxisSetup, self.fig.axes[ay])
+        y_domain = self.__get_y_domain(asy.limits)
         params_plot = [
             f'color=' + data.ls.plot_color,
             data.ls.line_style,
@@ -537,6 +553,8 @@ class _LatexOutput:
             params_plot += ['only marks']
         if len(data.ls.marker) == 0:
             params_plot += ['no markers']
+        if y_domain is not None:
+            params_plot += [f'restrict y to domain={{{self.__fmt_flt(y_domain[0])}:{self.__fmt_flt(y_domain[1])}}}']
 
         asx = cast(AxisSetup, self.fig.axes[ax])
         asy = cast(AxisSetup, self.fig.axes[ay])
