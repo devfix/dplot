@@ -7,8 +7,10 @@ The aim is merely to provide convenient functions for the most common cases of p
 
 ## Installation in a local venv
 
-`source .venv/bin/activate`<br/>
-`python3 -m pip install git+https://github.com/devfix/dplot.git`
+```bash
+source .venv/bin/activate
+python3 -m pip install git+https://github.com/devfix/dplot.git
+```
 
 **Optional: run the tests**<br/>
 Clone the repo to somewhere on your machine

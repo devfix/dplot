@@ -5,8 +5,7 @@ from typing import cast
 import numpy as np
 import pandas
 from pandas import DataFrame
-from dplot import Figure, AxisSetup, LineSetup
-from dplot.dplot import TickSetup, GridSetup, Data, LegendSetup, ExportType
+from dplot import *
 from tests.tools import check_identical_pdf
 
 
