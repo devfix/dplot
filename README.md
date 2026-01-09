@@ -15,7 +15,7 @@ Clone the repo to somewhere on your machine
 ```bash
 cd <repo path>  # enter repo path
 python3 -m venv .venv  # create new venv
-source .venv/bin/active  # enter venv
+source .venv/bin/activate  # enter venv
 pip install pytest pandas opencv-python  # install dependencies of the tests
 python3 -m pytest  # run tests
 ```
