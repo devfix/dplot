@@ -26,3 +26,4 @@ def check_identical_pdf(path_pdf: str) -> bool:
     if not os.path.exists(path_png_expected):
         raise FileNotFoundError(path_png_expected)
     return check_images_are_identical(path_png_test, path_png_expected)
+

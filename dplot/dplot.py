@@ -6,10 +6,13 @@ import subprocess
 import sys
 import tempfile
 from enum import Enum
-from importlib.resources import read_text
 from itertools import chain
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
+
+# import matplotlib
+# matplotlib.use('gtk3agg')
+import matplotlib.pyplot as plt
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -275,6 +278,9 @@ class Figure:
         }
         return tuple([type_map[t] for t in types])
 
+    def show(self):
+        _MatplotlibView(self).show()
+
     def _cvt_latex_to_pdf(self, path_latex: str, path_pdf: str, quiet=True):
         if shutil.which(Environment.PATH_PDFLATEX) is None:
             raise FileNotFoundError(Environment.PATH_PDFLATEX)
@@ -323,22 +329,37 @@ class Figure:
             subprocess.call(cmd, stdout=subprocess.DEVNULL if quiet else sys.stdout.buffer, stderr=subprocess.DEVNULL if quiet else sys.stderr.buffer)
             os.remove(path_svg_tmp)
 
-    def get_axis_pos(self, val: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
-        if val == 't':
+    @staticmethod
+    def get_axis_pos(axis: Union[XAxis, YAxis]) -> Literal['top', 'left', 'right', 'bottom']:
+        if axis == 't':
             return 'top'
-        elif val == 'l':
+        elif axis == 'l':
             return 'left'
-        elif val == 'r':
+        elif axis == 'r':
             return 'right'
-        elif val == 'b':
+        elif axis == 'b':
             return 'bottom'
         raise RuntimeError()
 
-    def get_axis_kind(self, val: Union[XAxis, YAxis]) -> Literal['x', 'y']:
+    @staticmethod
+    def get_axis_kind(val: Union[XAxis, YAxis]) -> Literal['x', 'y']:
         return 'x' if val in get_args(XAxis) else ('y' if val in get_args(YAxis) else None)
 
-    def get_opposite_axis_kind(self, axis_kind: Literal['x', 'y']) -> Literal['x', 'y']:
+    @staticmethod
+    def get_opposite_axis_kind(axis_kind: Literal['x', 'y']) -> Literal['x', 'y']:
         return 'x' if axis_kind == 'y' else ('y' if axis_kind == 'x' else None)
+
+    @staticmethod
+    def get_opposite_axis(axis: Union[XAxis, YAxis]) -> Union[XAxis, YAxis]:
+        if axis == 'l':
+            return 'r'
+        elif axis == 'r':
+            return 'l'
+        elif axis == 't':
+            return 'b'
+        elif axis == 'b':
+            return 't'
+        raise RuntimeError(f'invalid axis: {axis}')
 
     # noinspection PyTypeChecker
     def _validate(self):
@@ -449,8 +470,8 @@ class _LatexOutput:
             axis_setup = self.fig.axes[axis]
             if axis_setup is None:
                 continue
-            axis_kind = self.fig.get_axis_kind(axis)
-            axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+            axis_kind = Figure.get_axis_kind(axis)
+            axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
             params = self.__get_axis_param(axis_kind, axis_setup, limits=(0, 1))
             params += [
                 f'{axis_kind}mode=linear',
@@ -463,7 +484,7 @@ class _LatexOutput:
                 f'{axis_kind}tick style={{draw=none}}',
                 f'{axis_kind}label=' + (r'{\hphantom{-}}' if axis_kind == 'y' else r'{\vphantom{-}}'),
                 f'{axis_kind}label shift={axis_setup.padding}',
-                f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
+                f'{axis_kind}ticklabel pos={Figure.get_axis_pos(axis)}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
         return out
@@ -479,8 +500,8 @@ class _LatexOutput:
                 continue
             axis = cast(Union[XAxis, YAxis], axis)
             axis_setup = cast(AxisSetup, axis_setup)
-            axis_kind = self.fig.get_axis_kind(axis)
-            axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+            axis_kind = Figure.get_axis_kind(axis)
+            axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
             params = self.__get_axis_param(axis_kind, axis_setup)
             if not background_color_applied:
                 params += [f'axis background/.style={{fill={self.fig.background_color}}}']
@@ -500,7 +521,7 @@ class _LatexOutput:
                 f'minor grid style={{{axis_setup.grid.minor_thickness},color={axis_setup.grid.minor_color}}}',
                 f'{axis_kind}tick=' + ('' if axis_setup.tick.enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
-                f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else self.fig.get_axis_pos(axis)),
+                f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else Figure.get_axis_pos(axis)),
                 f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
                 f'major {axis_kind} tick style={{{axis_setup.tick.major_thickness},color={axis_setup.tick.major_color}}}',
                 f'minor {axis_kind} tick style={{{axis_setup.tick.minor_thickness},color={axis_setup.tick.minor_color}}}',
@@ -587,8 +608,8 @@ class _LatexOutput:
         out += ['%%%%%%%%%%%']
         for axis, axis_setup in self.fig.axes.items():
             if axis_setup is not None:
-                axis_kind = self.fig.get_axis_kind(axis)
-                axis_kind_op = self.fig.get_opposite_axis_kind(axis_kind)
+                axis_kind = Figure.get_axis_kind(axis)
+                axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
                 params = self.__get_axis_param(axis_kind, axis_setup)
                 params += [
                     f'{axis_kind_op}min=0',
@@ -598,7 +619,7 @@ class _LatexOutput:
                     f'{axis_kind}tick style={{draw=none}}',
                     f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
                     f'hide {axis_kind_op} axis=true',
-                    f'{axis_kind}ticklabel pos={self.fig.get_axis_pos(axis)}',
+                    f'{axis_kind}ticklabel pos={Figure.get_axis_pos(axis)}',
                     r'axis on top=true',
                 ]
 
@@ -644,3 +665,80 @@ class _LatexOutput:
             r'\end{tikzpicture}',
             r'\end{document}',
         ]
+
+
+class _MatplotlibView:
+    def __init__(self, fig: Figure):
+        self.fig = fig
+
+    def show(self):
+        custom_params = {
+            'text.usetex': True,
+            'font.family': 'serif',
+            'text.latex.preamble': r'''
+                \usepackage{siunitx}
+                \usepackage{amsmath}
+            '''
+        }
+        with plt.rc_context(custom_params):
+            self._show_pyplot()
+
+    def _show_pyplot(self):
+        plt_fig, plot_initial = plt.subplots(figsize=(10, 6))
+        plt.get_current_fig_manager().set_window_title(self.fig.title if len(self.fig.title) > 0 else self.fig.name)
+
+        required_axes = {axis: axis_setup for axis, axis_setup in self.fig.axes.items() if axis_setup is not None}
+        plots = {'t': {'l': None, 'r': None}, 'b': {'l': None, 'r': None}}
+
+        # create initial x-y relation
+        x_side: XAxis = 'b'
+        y_side: YAxis = 'l'
+        if 'l' not in required_axes:
+            # move y-axis to right side
+            y_side = 'r'
+            plot_initial.yaxis.set_label_position("right")
+            plot_initial.yaxis.tick_right()
+        if 'b' not in required_axes:
+            # move axis to top
+            x_side = 't'
+            plot_initial.xaxis.set_ticks_position('top')
+
+        plots[x_side][y_side] = plot_initial  # initial relation (plot)
+        axes = {x_side: plot_initial, y_side: plot_initial}
+
+        x_side_opp = Figure.get_opposite_axis(x_side)
+        y_side_opp = Figure.get_opposite_axis(y_side)
+        if y_side_opp in required_axes:
+            plots[x_side][y_side_opp] = plot_initial.twinx()
+            axes[y_side_opp] = plots[x_side][y_side_opp]
+        if x_side_opp in required_axes:
+            plots[x_side_opp][y_side] = plot_initial.twiny()
+            axes[x_side_opp] = plots[x_side_opp][y_side]
+        if x_side_opp in required_axes and y_side_opp in required_axes:
+            plots[x_side_opp][y_side_opp] = plots[x_side][y_side_opp].twiny()
+
+        for data in self.fig.plot_data:
+            ax: plt.Axes = plots[data.ax][data.ay]
+            plot_color = data.ls.plot_color if data.ls is not None else 'black'
+            line_style = data.ls.line_style if data.ls is not None else '-'
+            label = data.label if len(data.label) > 0 else None
+            ax.plot(data.dx, data.dy, color=plot_color, linestyle=line_style, label=label)
+
+        for axis, axis_setup in required_axes.items():
+            if axis_setup.limits is not None:
+                getattr(axes[axis], f'set_{Figure.get_axis_kind(axis)}lim')(axis_setup.limits)
+            if axis_setup.label is not None:
+                getattr(axes[axis], f'set_{Figure.get_axis_kind(axis)}label')(axis_setup.label)
+            if axis_setup.log:
+                getattr(axes[axis], f'set_{Figure.get_axis_kind(axis)}scale')('log', base=float(axis_setup.log_base))
+
+        if self.fig.legend_setup.enable:
+            plot_initial.legend()
+
+        plt.tight_layout()
+        plt.show(block=True)
+
+        # plot_initial.tick_params(axis='y', colors='blue')
+        # ax_br.tick_params(axis='y', colors='red')
+        # plot_initial.tick_params(axis='x', colors='blue')
+        # ax_tl.tick_params(axis='x', colors='green')
