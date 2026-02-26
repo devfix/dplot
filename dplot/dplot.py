@@ -10,9 +10,6 @@ from itertools import chain
 from typing import Union, Literal, get_args, Collection, cast
 import numpy as np
 
-# import matplotlib
-# matplotlib.use('gtk3agg')
-import matplotlib.pyplot as plt
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -668,8 +665,15 @@ class _LatexOutput:
 
 
 class _MatplotlibView:
+    _initialized = False
+
     def __init__(self, fig: Figure):
         self.fig = fig
+        if not _MatplotlibView._initialized:
+            # import matplotlib
+            # matplotlib.use('gtk3agg')
+            import matplotlib.pyplot as plt
+            _MatplotlibView._initialized = True
 
     def show(self):
         custom_params = {
