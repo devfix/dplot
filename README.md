@@ -19,7 +19,7 @@ git clone "https://github.com/devfix/dplot.git"  # download dplot repo, alternat
 cd dplot  # enter repo path
 python3 -m venv .venv  # create new venv
 source .venv/bin/activate  # enter venv
-pip install pytest pandas opencv-python  # install dependencies of the tests
+pip install pytest pandas opencv-python matplotlib  # install dependencies of the tests
 python3 -m pytest  # run tests
 ```
 
