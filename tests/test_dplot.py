@@ -56,11 +56,11 @@ def test_s_par():
     s11 = df['S(1,1) Via Unitless data (Real)'].to_numpy() + 1j * df['S(1,1) Via Unitless data (Imag)'].to_numpy()
 
     fig = Figure(title, legend_setup=LegendSetup(anchor='south east', at=(0.6, 0.02)))
-    fig.axes['t'] = AxisSetup(padding='0cm')
-    fig.axes['b'] = AxisSetup(r'$f$ / $\si{\giga\hertz}$', label_shift='0.5em', padding='0.8cm',
+    fig.axes['t'] = AxisSetup(padding=0)
+    fig.axes['b'] = AxisSetup(r'$f$ / $\si{\giga\hertz}$', label_shift='0.5em', padding=8,
                               tick=TickSetup(minor_num=1), grid=GridSetup(major_enable=True, minor_enable=True, minor_color='lightgray'))
-    fig.axes['l'] = AxisSetup(r'$|S| \cdot 10^2$', label_shift='0.1em', padding='1.5cm')
-    fig.axes['r'] = AxisSetup(r'$\angle S$ / $\num{360}^\circ$', label_shift='1.5em', padding='1.5cm')
+    fig.axes['l'] = AxisSetup(r'$|S| \cdot 10^2$', label_shift='0.1em', padding=15)
+    fig.axes['r'] = AxisSetup(r'$\angle S$ / $\num{360}^\circ$', label_shift='1.5em', padding=15)
 
     fig.add(Data('b', 'l', freqs_ghz, 10 ** 2 * 20 * np.log10(np.abs(s11)), label=r'$|S_{11}|$',
                  ls=LineSetup(marker='*', marker_repeat=20)))
@@ -101,8 +101,8 @@ def test_crlb():
     fig = Figure(title, background_color='gray!30', legend_setup=LegendSetup(enable=True))
     ts = TickSetup(enable=True)
     fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts)
-    fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), padding='1cm', log=True)
-    fig.axes['r'] = AxisSetup('', padding='1cm')
+    fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), padding=10, log=True)
+    fig.axes['r'] = AxisSetup('', padding=10)
     fig.add(Data('b', 'l', f0s, crlb_exact, label='exact'))
     fig.add(Data('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted')))
 

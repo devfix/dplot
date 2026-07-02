@@ -132,7 +132,7 @@ class AxisSetup:
             log: bool = False,
             log_base: str = '10',  # no float, otherwise the number of digits is not clear
             limits: Union[None, tuple[float, float]] = None,
-            padding: str = '0cm',
+            padding: float = 0,
             grid: GridSetup = GridSetup(),
             tick: TickSetup = TickSetup(),
     ):
@@ -198,12 +198,12 @@ class Data:
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, name: str, title: str = '', width: int = 50, height: int = 50, basic_thickness: PlotThickness = 'thick',
+    def __init__(self, name: str, title: str = '', width: float = 50, height: float = 50, basic_thickness: PlotThickness = 'thick',
                  background_color: PlotColor = 'white', legend_setup: LegendSetup = LegendSetup()):
         self.name: str = name
         self.title: str = title
-        self.width: int = width
-        self.height: int = height
+        self.width: float = width
+        self.height: float = height
         self.basic_thickness: PlotThickness = basic_thickness
         self.background_color: PlotColor = background_color
         self.legend_setup = legend_setup
@@ -438,8 +438,8 @@ class _LatexOutput:
         out += LatexCmdsDocClass
         out += LatexCmdsAfterDocClass
         out += [r'\begin{document}']
-        out += [r'\setlength\figurewidth{' + str(self.fig.width) + r'mm}']
-        out += [r'\setlength\figureheight{' + str(self.fig.height) + r'mm}']
+        out += [r'\setlength\figurewidth{' + f'{self.fig.width:.3f}' + r'mm}']
+        out += [r'\setlength\figureheight{' + f'{self.fig.height:.3f}' + r'mm}']
         out += [r'\begin{tikzpicture}[font=\normalsize]']
         out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
         return out
@@ -450,8 +450,8 @@ class _LatexOutput:
             limits = axis_setup.limits
         return [
             f'scale only axis',
-            f'width={self.fig.width}mm',
-            f'height={self.fig.height}mm',
+            f'width={self.fig.width:.3f}mm',
+            f'height={self.fig.height:.3f}mm',
             f'{axis_kind}min={self.__fmt_flt(limits[0])}',
             f'{axis_kind}max={self.__fmt_flt(limits[1])}',
         ]
@@ -478,7 +478,7 @@ class _LatexOutput:
                 f'hide {axis_kind_op} axis=true',
                 f'{axis_kind}tick style={{draw=none}}',
                 f'{axis_kind}label=' + (r'{\hphantom{-}}' if axis_kind == 'y' else r'{\vphantom{-}}'),
-                f'{axis_kind}label shift={axis_setup.padding}',
+                f'{axis_kind}label shift={axis_setup.padding:.3f}mm',
                 f'{axis_kind}ticklabel pos={Figure.get_axis_pos(axis)}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
