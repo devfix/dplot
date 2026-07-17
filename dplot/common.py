@@ -1,7 +1,8 @@
 from enum import Enum
 import math
 from typing import Union, Literal, Collection
-from .color import Color, AnyColor
+from .color import Color, AnyColor, color_to_lilaq_color
+
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -41,6 +42,18 @@ class LineStyle(Enum):
     LOOSELY_DASH_DOT_DOTTED = 'loosely dashdotdotted'
 
 
+class Marker(Enum):
+    NONE = 'none'
+    DOT = 'dot'
+    CIRCLE = 'circle'
+    SQUARE = 'square'
+    TRIANGLE = 'triangle'
+    DIAMOND = 'diamond'
+    CROSS = 'cross'
+    PLUS = 'plus'
+    ASTERISK = 'asterisk'
+
+
 def linestyle_to_lilaq_style(style: LineStyle) -> str:
     """
     Returns the appropriate Typst stroke definition.
@@ -67,10 +80,20 @@ def linestyle_to_lilaq_style(style: LineStyle) -> str:
     return mapping.get(style, '"solid"')
 
 
-Marker = Literal[
-    '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
-    'triangle*', 'diamond', 'diamond*', 'halfdiamond*', 'halfsquare*', 'halfsquare left*', 'halfsquare right*', 'Mercedes star', 'Mercedes star flipped',
-    'halfcircle', 'halfcircle*', 'pentagon', 'pentagon*', 'ball', 'cube', 'cube*', '']
+def to_lilaq_marker(marker: Marker, color: AnyColor) -> str:
+    """Returns the native Typst/Lilaq marker shorthand."""
+    mapping = {
+        Marker.NONE: 'none',
+        Marker.DOT: 'mark: "o", mark-fill: ' + color_to_lilaq_color(color),
+        Marker.CIRCLE: 'mark: "o"',
+        Marker.SQUARE: 'mark: "s"',
+        Marker.TRIANGLE: 'mark: "^"',
+        Marker.DIAMOND: 'mark: "d"',
+        Marker.CROSS: 'v"x"',
+        Marker.PLUS: 'mark: "+"',
+        Marker.ASTERISK: 'mark: "star"',
+    }
+    return mapping.get(marker, 'none')
 
 
 class Environment:
@@ -170,7 +193,7 @@ class AxisSetup:
 
 class LineSetup:
     def __init__(self, plot_color: AnyColor = Color.BLACK, line_style: LineStyle = LineStyle.SOLID, line_width: AnyThickness = 1,
-                 marker: Marker = '', marker_repeat: int | float = 1, marker_phase: int = 0):
+                 marker: Marker = Marker.NONE, marker_repeat: int | float = 1, marker_phase: int = 0):
         self.plot_color: AnyColor = plot_color
         self.line_style: LineStyle = line_style
         self.line_width: AnyThickness = line_width

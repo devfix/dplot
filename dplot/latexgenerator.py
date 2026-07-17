@@ -3,11 +3,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from enum import Enum
 from itertools import chain
 from typing import cast, get_args
-
-from .color import color_to_pgfplots_color, color_to_pgfplots_options
+from .color import _resolve_color
 from .common import *
 from .figure import Figure
 
@@ -119,6 +117,33 @@ class LatexGenerator:
     def __fmt_linestyle(self, linestyle: LineStyle) -> str:
         return linestyle.value
 
+    def __fmt_color(self, color: AnyColor, key_color='color', key_opacity='opacity') -> str:
+        """
+            Returns a string of pgfplots key-value strings for both color and opacity.
+            Example output: 'color={rgb,255:red,255; green,128; blue,0},opacity=0.5'
+            """
+        col = _resolve_color(color)
+        col_str = f"{{rgb,255:red,{col.r}; green,{col.g}; blue,{col.b}}}"
+        opts = [f"{key_color}={col_str}"]
+        if col.a < 1.0:
+            opts.append(f"{key_opacity}={col.a:.3g}")
+        return ','.join(opts)
+
+    def __fmt_marker(self, marker: Marker) -> str:
+        """Returns the PGFPlots 'mark=' string."""
+        mapping = {
+            Marker.NONE: '',
+            Marker.DOT: '*',
+            Marker.CIRCLE: 'o',
+            Marker.SQUARE: 'square',
+            Marker.TRIANGLE: 'triangle',
+            Marker.DIAMOND: 'diamond',
+            Marker.CROSS: 'x',
+            Marker.PLUS: '+',
+            Marker.ASTERISK: 'asterisk',
+        }
+        return mapping[marker]
+
     def __create_doc_begin(self) -> list[str]:
         out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
         out += ['% auto-generated using dplot %']
@@ -186,7 +211,7 @@ class LatexGenerator:
             axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
             params = self.__get_axis_param(axis_kind, axis_setup)
             if not background_color_applied:
-                params += [f'axis background/.style={{fill={color_to_pgfplots_color(self.fig.background_color)}}}']
+                params += [f'axis background/.style={{{self.__fmt_color(self.fig.background_color, key_color='fill', key_opacity='fill opacity')}}}']
                 background_color_applied = True
             params += [
                 f'{axis_kind}mode=' + ('log' if axis_setup.log else 'linear'),
@@ -198,15 +223,15 @@ class LatexGenerator:
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
                 f'{axis_kind}majorgrids={str(axis_setup.grid.major_enable).lower()}',
-                f'major grid style={{line width={self.__fmt_thickness(axis_setup.grid.major_thickness)},{color_to_pgfplots_options(axis_setup.grid.major_color)}}}',
+                f'major grid style={{line width={self.__fmt_thickness(axis_setup.grid.major_thickness)},{self.__fmt_color(axis_setup.grid.major_color)}}}',
                 f'{axis_kind}minorgrids={str(axis_setup.grid.minor_enable).lower()}',
-                f'minor grid style={{line width={self.__fmt_thickness(axis_setup.grid.minor_thickness)},{color_to_pgfplots_options(axis_setup.grid.minor_color)}}}',
+                f'minor grid style={{line width={self.__fmt_thickness(axis_setup.grid.minor_thickness)},{self.__fmt_color(axis_setup.grid.minor_color)}}}',
                 f'{axis_kind}tick=' + ('' if axis_setup.tick.enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
                 f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else Figure.get_axis_pos(axis)),
                 f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
-                f'major {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.major_thickness)},{color_to_pgfplots_options(axis_setup.tick.major_color)}}}',
-                f'minor {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.minor_thickness)},{color_to_pgfplots_options(axis_setup.tick.minor_color)}}}',
+                f'major {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.major_thickness)},{self.__fmt_color(axis_setup.tick.major_color)}}}',
+                f'minor {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.minor_thickness)},{self.__fmt_color(axis_setup.tick.minor_color)}}}',
                 f'minor {axis_kind} tick num={axis_setup.tick.minor_num}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
@@ -247,17 +272,17 @@ class LatexGenerator:
         asy = cast(AxisSetup, self.fig.axes[ay])
         y_domain = self.__get_y_domain(asy)
         params_plot = [
-            color_to_pgfplots_options(data.ls.plot_color),
+            self.__fmt_color(data.ls.plot_color),
             self.__fmt_linestyle(data.ls.line_style),
             f'line width={data.ls.line_width}',
-            f'mark={data.ls.marker}',
+            f'mark={self.__fmt_marker(data.ls.marker)}',
             f'mark repeat={data.ls.marker_repeat}',
             f'mark phase={data.ls.marker_phase}',
             f'mark options={{solid}}',  # prevent dashed markers etc.
         ]
         if data.ls.line_style == LineStyle.NONE:
             params_plot += ['only marks']
-        if len(data.ls.marker) == 0:
+        if data.ls.marker == Marker.NONE:
             params_plot += ['no markers']
         if y_domain is not None:
             params_plot += [f'restrict y to domain={{{self.__fmt_flt(y_domain[0])}:{self.__fmt_flt(y_domain[1])}}}']

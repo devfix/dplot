@@ -222,26 +222,6 @@ class Color(Enum):
 AnyColor = Union[Color, RGBAColor, Tuple[int, int, int], str]
 
 
-def color_to_pgfplots_color(color: AnyColor) -> str:
-    """
-    Converts a Color enum, RGBAColor, tuple, or string name to an inline pgfplots color string.
-    Example output: '{rgb,255:red,255; green,165; blue,0}'
-    """
-    col = _resolve_color(color)
-    return f"{{rgb,255:red,{col.r}; green,{col.g}; blue,{col.b}}}"
-
-
-def color_to_pgfplots_options(color: AnyColor) -> str:
-    """
-    Returns a string of pgfplots key-value strings for both color and opacity.
-    Example output: 'color={rgb,255:red,255; green,128; blue,0},opacity=0.5'
-    """
-    col = _resolve_color(color)
-    opts = [f"color={color_to_pgfplots_color(col)}"]
-    if col.a < 1.0:
-        opts.append(f"opacity={col.a:.3g}")
-    return ','.join(opts)
-
 
 def color_to_lilaq_color(color: AnyColor) -> str:
     """
