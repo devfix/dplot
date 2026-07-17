@@ -22,9 +22,51 @@ AnyThickness = Union[Thickness, float]
 TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
-LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
-'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
-LineWidth = str
+
+
+class LineStyle(Enum):
+    NONE = 'none'
+    SOLID = 'solid'
+    DOTTED = 'dotted'
+    DENSELY_DOTTED = 'densely dotted'
+    LOOSELY_DOTTED = 'loosely dotted'
+    DASHED = 'dashed'
+    DENSELY_DASHED = 'densely dashed'
+    LOOSELY_DASHED = 'loosely dashed'
+    DASH_DOTTED = 'dashdotted'
+    DENSELY_DASH_DOTTED = 'densely dashdotted'
+    LOOSELY_DASH_DOTTED = 'loosely dashdotted'
+    DASH_DOT_DOTTED = 'dashdotdotted'
+    DENSELY_DASH_DOT_DOTTED = 'densely dashdotdotted'
+    LOOSELY_DASH_DOT_DOTTED = 'loosely dashdotdotted'
+
+
+def linestyle_to_lilaq_style(style: LineStyle) -> str:
+    """
+    Returns the appropriate Typst stroke definition.
+    Uses native shorthands for standard styles, and custom dash arrays for variants.
+    """
+    mapping = {
+        # Native Lilaq/Typst shorthands
+        LineStyle.SOLID: '"solid"',
+        LineStyle.DOTTED: '"dotted"',
+        LineStyle.DASHED: '"dashed"',
+        LineStyle.DASH_DOTTED: '"dash-dotted"',
+
+        # Custom patterns for variants
+        LineStyle.DENSELY_DOTTED: '(array: (1pt, 1pt), phase: 0pt)',
+        LineStyle.LOOSELY_DOTTED: '(array: (1pt, 4pt), phase: 0pt)',
+        LineStyle.DENSELY_DASHED: '(array: (2pt, 2pt), phase: 0pt)',
+        LineStyle.LOOSELY_DASHED: '(array: (6pt, 6pt), phase: 0pt)',
+        LineStyle.DENSELY_DASH_DOTTED: '(array: (2pt, 1pt, 1pt, 1pt), phase: 0pt)',
+        LineStyle.LOOSELY_DASH_DOTTED: '(array: (4pt, 2pt, 1pt, 2pt), phase: 0pt)',
+
+        # Fallback for others
+        LineStyle.NONE: 'none'
+    }
+    return mapping.get(style, '"solid"')
+
+
 Marker = Literal[
     '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
     'triangle*', 'diamond', 'diamond*', 'halfdiamond*', 'halfsquare*', 'halfsquare left*', 'halfsquare right*', 'Mercedes star', 'Mercedes star flipped',
@@ -127,11 +169,11 @@ class AxisSetup:
 
 
 class LineSetup:
-    def __init__(self, plot_color: AnyColor = Color.BLACK, line_style: LineStyle = 'solid', line_width: LineWidth = '1pt',
+    def __init__(self, plot_color: AnyColor = Color.BLACK, line_style: LineStyle = LineStyle.SOLID, line_width: AnyThickness = 1,
                  marker: Marker = '', marker_repeat: int | float = 1, marker_phase: int = 0):
         self.plot_color: AnyColor = plot_color
         self.line_style: LineStyle = line_style
-        self.line_width: LineWidth = line_width
+        self.line_width: AnyThickness = line_width
         self.marker: Marker = marker
         self.marker_repeat: int = int(marker_repeat)
         self.marker_phase: int = int(marker_phase)

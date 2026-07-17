@@ -116,6 +116,9 @@ class LatexGenerator:
             thickness = thickness.value
         return f'{thickness:.3f}pt'
 
+    def __fmt_linestyle(self, linestyle: LineStyle) -> str:
+        return linestyle.value
+
     def __create_doc_begin(self) -> list[str]:
         out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
         out += ['% auto-generated using dplot %']
@@ -245,14 +248,14 @@ class LatexGenerator:
         y_domain = self.__get_y_domain(asy)
         params_plot = [
             color_to_pgfplots_options(data.ls.plot_color),
-            data.ls.line_style,
+            self.__fmt_linestyle(data.ls.line_style),
             f'line width={data.ls.line_width}',
             f'mark={data.ls.marker}',
             f'mark repeat={data.ls.marker_repeat}',
             f'mark phase={data.ls.marker_phase}',
             f'mark options={{solid}}',  # prevent dashed markers etc.
         ]
-        if len(data.ls.line_style) == 0:
+        if data.ls.line_style == LineStyle.NONE:
             params_plot += ['only marks']
         if len(data.ls.marker) == 0:
             params_plot += ['no markers']

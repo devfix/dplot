@@ -117,6 +117,9 @@ class TypstGenerator:
             thickness = thickness.value
         return f'{thickness:.3f}pt'
 
+    def __fmt_linestyle(self, linestyle: LineStyle) -> str:
+        return linestyle.value
+
     def __translate_style(self, style_str: LineStyle) -> str:
         return LILAQ_LINE_STYLE_MAP.get(style_str, '"solid"')
 
@@ -222,7 +225,7 @@ class TypstGenerator:
             plot_args.append(f'label: [{data.label}]')
 
         if style != 'none':
-            plot_args.append(f'stroke: (paint: {color}, thickness: {data.ls.line_width}, dash: {style})')
+            plot_args.append(f'stroke: (paint: {color}, thickness: {self.__fmt_thickness(data.ls.line_width)}, dash: {style})')
         else:
             plot_args.append('stroke: none')
 

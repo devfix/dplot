@@ -38,7 +38,7 @@ def test_crlb():
     fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
     fig.axes['r'] = AxisSetup('')
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
-    fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted'))
+    fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))
 
     path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
     assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
