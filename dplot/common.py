@@ -102,7 +102,7 @@ class AxisSetup:
     def __init__(
             self,
             label: str = '',
-            label_shift: str = '0cm',
+            label_shift: float = 0,  # in mm
             scale: float = 1,
             log: bool = False,
             log_base: str = '10',  # no float, otherwise the number of digits is not clear

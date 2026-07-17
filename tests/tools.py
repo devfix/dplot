@@ -11,7 +11,7 @@ PATH_OUTPUT_DIR_TYPST = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 
 def render_pdf_to_png(path_pdf: str, path_png: str, dpi: int = 300):
-    cmd = ['convert', '-density', str(dpi), path_pdf, '-quality', '100', path_png]
+    cmd = ['convert', '-background', 'white', '-alpha', 'remove', '-density', str(dpi), path_pdf, '-quality', '100', path_png]
     subprocess.call(cmd)
 
 

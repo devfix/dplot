@@ -7,6 +7,10 @@ The aim is merely to provide convenient functions for the most common cases of p
 
 ## Example plots
 
+The following table shows a comparision of the LaTex and Typst output.
+Click on the images to see the code that created them.
+<br/>
+
 <table style="background-color: white;">
   <thead>
     <tr>
@@ -17,13 +21,13 @@ The aim is merely to provide convenient functions for the most common cases of p
   <tbody>
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_classic_plot.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_classic_plot.expected.png" width="400"/>
         </a>
       </td>
     </tr>

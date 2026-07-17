@@ -34,10 +34,18 @@ class Figure:
         self.plot_data: list[Data] = []
         self._data_counter = 0
 
-    def add(self, data: Data):
+    def add_data(self, data: Data):
         data._id = self._data_counter
         self._data_counter += 1
         self.plot_data.append(data)
+
+    def add(self, ax: XAxis,
+            ay: YAxis,
+            dx: TypeData,
+            dy: TypeData,
+            label: str = '',
+            ls: Union[LineSetup, None] = None):
+        self.add_data(Data(ax, ay, dx, dy, label, ls))
 
     def plot(
             self,

@@ -190,7 +190,7 @@ class LatexGenerator:
                 f'{axis_kind_op}min=0',
                 f'{axis_kind_op}max=1',
                 f'{axis_kind}label={{{axis_setup.label}}}',
-                f'{axis_kind}label shift={{{axis_setup.label_shift}}}',
+                f'{axis_kind}label shift={{{axis_setup.label_shift:.3f}mm}}',
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
                 f'{axis_kind}majorgrids={str(axis_setup.grid.major_enable).lower()}',
