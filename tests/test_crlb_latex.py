@@ -1,7 +1,7 @@
 import inspect
 import numpy as np
 from numpy import pi
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX, PATH_OUTPUT_DIR_TYPST
 from dplot import *
 
 
@@ -40,5 +40,7 @@ def test_crlb():
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
     fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
-    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
+    # path_latex, path_latex_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
+    # assert check_identical_pdf(path_latex_pdf)  # check that pdf looks as expected
+    assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected

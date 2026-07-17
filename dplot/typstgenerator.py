@@ -2,8 +2,8 @@ import os
 import shutil
 import subprocess
 import sys
-from typing import cast
-from .color import _resolve_color
+from typing import cast, Collection, Union
+from .color import _resolve_color, AnyColor, Color
 from .common import *
 from .figure import Figure
 
@@ -80,9 +80,9 @@ class TypstGenerator:
 
     def __fmt_linestyle(self, linestyle: LineStyle) -> str:
         """
-            Returns the appropriate Typst stroke definition.
-            Uses native shorthands for standard styles, and custom dash arrays for variants.
-            """
+        Returns the appropriate Typst stroke definition.
+        Uses native shorthands for standard styles, and custom dash arrays for variants.
+        """
         mapping = {
             # Native Lilaq/Typst shorthands
             LineStyle.SOLID: '"solid"',
@@ -105,9 +105,9 @@ class TypstGenerator:
 
     def __fmt__color(self, color: AnyColor) -> str:
         """
-            Converts a Color enum, RGBAColor, tuple, or string name to a valid Typst/Lilaq color string.
-            Example output: 'rgb(31, 119, 180)' or 'rgb(255, 0, 0, 50%)'
-            """
+        Converts a Color enum, RGBAColor, tuple, or string name to a valid Typst/Lilaq color string.
+        Example output: 'rgb(31, 119, 180)' or 'rgb(255, 0, 0, 50%)'
+        """
         col = _resolve_color(color)
         if col.a < 1.0:
             alpha_pct = round(col.a * 100, 1)
@@ -137,8 +137,7 @@ class TypstGenerator:
     # ==========================================
 
     def __create_doc_begin(self) -> list[str]:
-        """Sets up page dimensions, margins, and imports Lilaq."""
-        m = self.fig.margin
+        """Sets up page dimensions, zero page margin for exact cropping, and imports Lilaq."""
         out = [
             '// auto-generated using dplot (TypstGenerator - Lilaq)',
             '#import "@preview/lilaq:0.6.0" as lq',
@@ -146,7 +145,7 @@ class TypstGenerator:
             '#set page(',
             '  width: auto,',
             '  height: auto,',
-            f'  margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
+            '  margin: 0mm,',  # FIXED: 0 page margin matches LaTeX standalone cropping!
             ')',
             ''
         ]
@@ -174,9 +173,14 @@ class TypstGenerator:
             ax, ay = active_pairs[0]
             return self.__create_diagram(ax, ay, is_primary=True)
 
+        # FIXED: Calculate total outer dimensions (plot size + margins)
+        m = self.fig.margin
+        total_w = self.fig.width + m["l"] + m["r"]
+        total_h = self.fig.height + m["t"] + m["b"]
+
         # For multi-axis setups, wrap diagrams in an overlaid block container
         out = [
-            f'#block(width: {self.fig.width:.3f}mm, height: {self.fig.height:.3f}mm, [',
+            f'#block(width: {total_w:.3f}mm, height: {total_h:.3f}mm, [',
         ]
         for idx, (ax, ay) in enumerate(active_pairs):
             is_primary = (idx == 0)
@@ -192,9 +196,12 @@ class TypstGenerator:
         asx = cast(AxisSetup, self.fig.axes.get(ax))
         asy = cast(AxisSetup, self.fig.axes.get(ay))
 
+        m = self.fig.margin
         args = [
             f'width: {self.fig.width:.3f}mm',
             f'height: {self.fig.height:.3f}mm',
+            # FIXED: Pass margin directly into Lilaq diagram for exact padding around plot box!
+            f'margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm)',
         ]
 
         # Apply title and background color only to the primary layer
