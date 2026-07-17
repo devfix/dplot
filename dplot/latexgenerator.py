@@ -7,6 +7,7 @@ from enum import Enum
 from itertools import chain
 from typing import cast, get_args
 
+from .color import color_to_pgfplots_color, color_to_pgfplots_options
 from .common import *
 from .figure import Figure
 
@@ -181,7 +182,7 @@ class LatexGenerator:
             axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
             params = self.__get_axis_param(axis_kind, axis_setup)
             if not background_color_applied:
-                params += [f'axis background/.style={{fill={self.fig.background_color}}}']
+                params += [f'axis background/.style={{fill={color_to_pgfplots_color(self.fig.background_color)}}}']
                 background_color_applied = True
             params += [
                 f'{axis_kind}mode=' + ('log' if axis_setup.log else 'linear'),
@@ -193,15 +194,15 @@ class LatexGenerator:
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
                 f'{axis_kind}majorgrids={str(axis_setup.grid.major_enable).lower()}',
-                f'major grid style={{{axis_setup.grid.major_thickness},color={axis_setup.grid.major_color}}}',
+                f'major grid style={{{axis_setup.grid.major_thickness},{color_to_pgfplots_options(axis_setup.grid.major_color)}}}',
                 f'{axis_kind}minorgrids={str(axis_setup.grid.minor_enable).lower()}',
-                f'minor grid style={{{axis_setup.grid.minor_thickness},color={axis_setup.grid.minor_color}}}',
+                f'minor grid style={{{axis_setup.grid.minor_thickness},{color_to_pgfplots_options(axis_setup.grid.minor_color)}}}',
                 f'{axis_kind}tick=' + ('' if axis_setup.tick.enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
                 f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else Figure.get_axis_pos(axis)),
                 f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
-                f'major {axis_kind} tick style={{{axis_setup.tick.major_thickness},color={axis_setup.tick.major_color}}}',
-                f'minor {axis_kind} tick style={{{axis_setup.tick.minor_thickness},color={axis_setup.tick.minor_color}}}',
+                f'major {axis_kind} tick style={{{axis_setup.tick.major_thickness},{color_to_pgfplots_options(axis_setup.tick.major_color)}}}',
+                f'minor {axis_kind} tick style={{{axis_setup.tick.minor_thickness},{color_to_pgfplots_options(axis_setup.tick.minor_color)}}}',
                 f'minor {axis_kind} tick num={axis_setup.tick.minor_num}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
@@ -242,7 +243,7 @@ class LatexGenerator:
         asy = cast(AxisSetup, self.fig.axes[ay])
         y_domain = self.__get_y_domain(asy)
         params_plot = [
-            f'color=' + data.ls.plot_color,
+            color_to_pgfplots_options(data.ls.plot_color),
             data.ls.line_style,
             f'line width={data.ls.line_width}',
             f'mark={data.ls.marker}',

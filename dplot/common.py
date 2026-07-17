@@ -1,6 +1,7 @@
 import enum
 import math
 from typing import Union, Literal, Collection
+from .color import Color, AnyColor
 
 # https://tikz.dev/pgfplots/reference-markers
 
@@ -10,8 +11,6 @@ XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
 LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
 'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
-PlotColor = Union[str, Literal['black', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'gray', 'white', 'darkgray', 'lightgray', 'brown',
-'lime', 'olive', 'orange', 'pink', 'purple', 'teal', 'violet']]
 PlotThickness = Literal['very thin', 'thin', 'thick', 'very thick']
 LineWidth = str
 Marker = Literal[
@@ -37,9 +36,9 @@ class GridSetup:
             self,
             major_enable: bool = False,
             major_thickness: PlotThickness = 'thin',
-            major_color: PlotColor = 'black',
+            major_color: AnyColor = Color.BLACK,
             minor_enable: bool = False,
-            minor_color: PlotColor = 'black',
+            minor_color: AnyColor = Color.BLACK,
             minor_thickness: PlotThickness = 'very thin'
     ):
         self.major_enable = major_enable
@@ -56,10 +55,10 @@ class TickSetup:
             enable: bool = True,  # enable / disable tick
             opposite: bool = False,  # enable ticks on opposite axis
             major_thickness: PlotThickness = 'thin',
-            major_color: PlotColor = 'black',
+            major_color: AnyColor = Color.BLACK,
             major_distance: Union[float, None] = None,
             minor_thickness: PlotThickness = 'thin',
-            minor_color: PlotColor = 'gray',
+            minor_color: AnyColor = Color.GRAY,
             minor_num: int = 0
     ):
         self.enable = enable
@@ -122,9 +121,9 @@ class AxisSetup:
 
 
 class LineSetup:
-    def __init__(self, plot_color: PlotColor = 'black', line_style: LineStyle = 'solid', line_width: LineWidth = '1pt',
+    def __init__(self, plot_color: AnyColor = Color.BLACK, line_style: LineStyle = 'solid', line_width: LineWidth = '1pt',
                  marker: Marker = '', marker_repeat: int | float = 1, marker_phase: int = 0):
-        self.plot_color: PlotColor = plot_color
+        self.plot_color: AnyColor = plot_color
         self.line_style: LineStyle = line_style
         self.line_width: LineWidth = line_width
         self.marker: Marker = marker
@@ -152,14 +151,12 @@ class Data:
         :param ls: line-setup
         """
         assert len(dx) == len(dy)
-        if ls is None:
-            ls = LineSetup()  # apply default line setup
         self.ax = ax
         self.ay = ay
         self.dx = dx
         self.dy = dy
         self.label = label
-        self.ls = ls
+        self.ls = LineSetup() if ls is None else ls
         self._id = None
 
     def cfg_marker(self, phase_frac: float = 0.0, n_samples=0, n_markers: int = 5) -> 'Data':

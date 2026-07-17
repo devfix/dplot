@@ -5,32 +5,36 @@ import numpy as np
 from numpy import pi
 import pandas
 from pandas import DataFrame
+
+from dplot.typstgenerator import TypstGenerator
 from tests.tools import check_identical_pdf
 
-from dplot import Figure, LegendSetup, TickSetup, GridSetup, AxisSetup, Data, LatexGenerator, ExportType, LineSetup
+from dplot import Figure, LegendSetup, TickSetup, GridSetup, AxisSetup, Data, LatexGenerator, LineSetup, Color
 
-PATH_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out')
+PATH_OUTPUT_DIR_LATEX = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out-latex')
+PATH_OUTPUT_DIR_TYPST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out-typst')
 
 
 def test_classic_bl():
     title = inspect.stack()[0][3]
-    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 0, 'r': 0}, background_color='gray!30', legend_setup=LegendSetup(enable=False))
+    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 0, 'r': 0}, background_color=Color.LIGHTGRAY, legend_setup=LegendSetup(enable=False))
     ts = TickSetup(enable=True)
     fig.axes['b'] = AxisSetup('x', scale=1, tick=ts)
     fig.axes['l'] = AxisSetup('y', scale=1, tick=ts)
     fig.add(Data('b', 'l', [-2, -1, 0, 1, 2], [5, 1, 0, 1, 5]))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
     assert check_identical_pdf(path_pdf)
+    # TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)
 
 
 def test_all_axes():
     title = inspect.stack()[0][3]
-    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 0, 'r': 0}, background_color='gray!30', legend_setup=LegendSetup(enable=False))
+    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 0, 'r': 0}, background_color=Color.LIGHTGRAY, legend_setup=LegendSetup(enable=False))
     fig.axes['b'] = AxisSetup(
         'bottom', scale=1,
-        tick=TickSetup(enable=True, minor_thickness='very thin', major_thickness='very thick', minor_color='blue', minor_num=4),
-        grid=GridSetup(major_enable=True, major_thickness='very thick', minor_enable=True, minor_color='blue', minor_thickness='thin'))
+        tick=TickSetup(enable=True, minor_thickness='very thin', major_thickness='very thick', minor_color=Color.BLUE, minor_num=4),
+        grid=GridSetup(major_enable=True, major_thickness='very thick', minor_enable=True, minor_color=Color.BLUE, minor_thickness='thin'))
     fig.axes['l'] = AxisSetup('left', log=True, tick=TickSetup(enable=True))
     fig.axes['r'] = AxisSetup('right', tick=TickSetup(enable=True))
     fig.axes['t'] = AxisSetup(
@@ -42,9 +46,9 @@ def test_all_axes():
     fig.add(Data('b', 'l', [0, 1, 2, 3, 4, 5], [4, 5, 4, 5, 4, 5]))
     fig.add(Data('b', 'r', [0, 1, 2, 3, 4, 5], [1, 1, 2, 1, 1, 1], ls=LineSetup(line_style='dotted', line_width='2')))
     fig.add(Data('t', 'l', [-2, -1, 0], [4, 6, 4], ls=LineSetup(line_style='solid', marker='square', marker_repeat=2, marker_phase=2)))
-    fig.add(Data('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color='black', line_width='0.5')))
+    fig.add(Data('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color=Color.BLACK, line_width='0.5')))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
     assert check_identical_pdf(path_pdf)
 
 
@@ -58,7 +62,7 @@ def test_s_par():
     fig = Figure(title, margin={'t': 0, 'b': 8, 'l': 15, 'r': 15}, legend_setup=LegendSetup(anchor='south east', at=(0.6, 0.02)))
     fig.axes['t'] = AxisSetup()
     fig.axes['b'] = AxisSetup(r'$f$ / $\si{\giga\hertz}$', label_shift='0.5em',
-                              tick=TickSetup(minor_num=1), grid=GridSetup(major_enable=True, minor_enable=True, minor_color='lightgray'))
+                              tick=TickSetup(minor_num=1), grid=GridSetup(major_enable=True, minor_enable=True, minor_color=Color.LIGHTGRAY))
     fig.axes['l'] = AxisSetup(r'$|S| \cdot 10^2$', label_shift='0.1em')
     fig.axes['r'] = AxisSetup(r'$\angle S$ / $\num{360}^\circ$', label_shift='1.5em')
 
@@ -67,7 +71,7 @@ def test_s_par():
     fig.add(Data('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi,
                  ls=LineSetup(line_style='dashed', marker='*', marker_repeat=20), label=r'$\angle S_{11}$'))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
     assert check_identical_pdf(path_pdf)
 
 
@@ -98,7 +102,7 @@ def test_crlb():
     y_max = 10 ** np.ceil(np.log10(crlb_max))
     # print(f'{title}: y_min={y_min}, y_max={y_max} crlb_approx={crlb_approx}')
 
-    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 10, 'r': 10}, background_color='gray!30', legend_setup=LegendSetup(enable=True))
+    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 10, 'r': 10}, background_color=Color.LIGHTGRAY, legend_setup=LegendSetup(enable=True))
     ts = TickSetup(enable=True)
     fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts)
     fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True)
@@ -106,5 +110,5 @@ def test_crlb():
     fig.add(Data('b', 'l', f0s, crlb_exact, label='exact'))
     fig.add(Data('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted')))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
     assert check_identical_pdf(path_pdf)

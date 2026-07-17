@@ -5,6 +5,7 @@ import sys
 from typing import cast, get_args
 import numpy as np
 
+from .color import AnyColor
 from .common import *
 
 
@@ -18,7 +19,7 @@ class Figure:
             height: float = 50,  # in mm
             margin=None,
             basic_thickness: PlotThickness = 'thick',
-            background_color: PlotColor = 'white',
+            background_color: AnyColor = Color.WHITE,
             legend_setup: LegendSetup = LegendSetup()
     ):
         self.name: str = name
@@ -27,7 +28,7 @@ class Figure:
         self.height: float = height
         self.margin = {'t': 5, 'b': 5, 'l': 15, 'r': 15} if margin is None else margin
         self.basic_thickness: PlotThickness = basic_thickness
-        self.background_color: PlotColor = background_color
+        self.background_color: AnyColor = background_color
         self.legend_setup = legend_setup
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
