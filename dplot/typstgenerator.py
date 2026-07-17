@@ -137,7 +137,8 @@ class TypstGenerator:
     # ==========================================
 
     def __create_doc_begin(self) -> list[str]:
-        """Sets up page dimensions, zero page margin for exact cropping, and imports Lilaq."""
+        """Sets up page dimensions, margins around the data-area, and imports Lilaq."""
+        m = self.fig.margin
         out = [
             '// auto-generated using dplot (TypstGenerator - Lilaq)',
             '#import "@preview/lilaq:0.6.0" as lq',
@@ -145,7 +146,8 @@ class TypstGenerator:
             '#set page(',
             '  width: auto,',
             '  height: auto,',
-            '  margin: 0mm,',  # FIXED: 0 page margin matches LaTeX standalone cropping!
+            # Margins are defined on the page; with bounds: "data-area", they start from the plot box!
+            f'  margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
             ')',
             ''
         ]
@@ -173,14 +175,9 @@ class TypstGenerator:
             ax, ay = active_pairs[0]
             return self.__create_diagram(ax, ay, is_primary=True)
 
-        # FIXED: Calculate total outer dimensions (plot size + margins)
-        m = self.fig.margin
-        total_w = self.fig.width + m["l"] + m["r"]
-        total_h = self.fig.height + m["t"] + m["b"]
-
-        # For multi-axis setups, wrap diagrams in an overlaid block container
+        # For multi-axis setups, wrap diagrams in a block container matching the data area dimensions
         out = [
-            f'#block(width: {total_w:.3f}mm, height: {total_h:.3f}mm, [',
+            f'#block(width: {self.fig.width:.3f}mm, height: {self.fig.height:.3f}mm, [',
         ]
         for idx, (ax, ay) in enumerate(active_pairs):
             is_primary = (idx == 0)
@@ -196,12 +193,10 @@ class TypstGenerator:
         asx = cast(AxisSetup, self.fig.axes.get(ax))
         asy = cast(AxisSetup, self.fig.axes.get(ay))
 
-        m = self.fig.margin
         args = [
+            'bounds: "data-area"',  # Locks element boundary to the inner plot box!
             f'width: {self.fig.width:.3f}mm',
             f'height: {self.fig.height:.3f}mm',
-            # FIXED: Pass margin directly into Lilaq diagram for exact padding around plot box!
-            f'margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm)',
         ]
 
         # Apply title and background color only to the primary layer
@@ -299,11 +294,9 @@ class TypstGenerator:
             plot_args.append(f'stroke: {stroke_val},')
 
         # Configure Markers and Repeat Step
-        # Always emit the mark argument so Lilaq knows to disable it!
         marker_str = self.__fmt_marker(data.ls.marker, data.ls.plot_color)
         plot_args.append(f'{marker_str},')
 
-        # Only emit mark-step if a valid marker is active and repeat is requested
         if data.ls.marker != Marker.NONE and data.ls.marker_repeat > 1:
             plot_args.append(f'mark-step: {data.ls.marker_repeat},')
 
