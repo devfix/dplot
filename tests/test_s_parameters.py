@@ -22,10 +22,9 @@ def test_s_parameters():
     fig.axes['l'] = AxisSetup(r'$|S| \cdot 10^2$', label_shift='0.1em')
     fig.axes['r'] = AxisSetup(r'$\angle S$ / $\num{360}^\circ$', label_shift='1.5em')
 
-    fig.add(Data('b', 'l', freqs_ghz, 10 ** 2 * 20 * np.log10(np.abs(s11)), label=r'$|S_{11}|$',
-                 ls=LineSetup(marker='*', marker_repeat=20)))
-    fig.add(Data('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi,
-                 ls=LineSetup(line_style='dashed', marker='*', marker_repeat=20), label=r'$\angle S_{11}$'))
+    fig.add('b', 'l', freqs_ghz, 10 ** 2 * 20 * np.log10(np.abs(s11)), label=r'$|S_{11}|$', ls=LineSetup(marker='*', marker_repeat=20))
+    fig.add('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi, ls=LineSetup(line_style='dashed', marker='*', marker_repeat=20),
+            label=r'$\angle S_{11}$')
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
-    assert check_identical_pdf(path_pdf)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected

@@ -9,7 +9,7 @@ def test_crlb():
     #  N: number of samples for the estimator
     N = 10
     phi = 0
-    n_f0s = 51  # number of f0s for the plot
+    n_f0s = 201  # number of f0s for the plot
     f0_min = 0
     f0_max = 0.5
     title = f'{inspect.stack()[0][3]}_{N}'
@@ -32,13 +32,13 @@ def test_crlb():
     y_max = 10 ** np.ceil(np.log10(crlb_max))
     # print(f'{title}: y_min={y_min}, y_max={y_max} crlb_approx={crlb_approx}')
 
-    fig = Figure(title, margin={'t': 0, 'b': 0, 'l': 10, 'r': 10}, background_color=Color.LIGHTGRAY, legend_setup=LegendSetup(enable=True))
+    fig = Figure(title, margin={'t': 3, 'b': 8, 'l': 12, 'r': 12}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True))
     ts = TickSetup(enable=True)
-    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts)
-    fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True)
+    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=2)
+    fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
     fig.axes['r'] = AxisSetup('')
-    fig.add(Data('b', 'l', f0s, crlb_exact, label='exact'))
-    fig.add(Data('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted')))
+    fig.add('b', 'l', f0s, crlb_exact, label='exact')
+    fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted'))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
-    assert check_identical_pdf(path_pdf)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected

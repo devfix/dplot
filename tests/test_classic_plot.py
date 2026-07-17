@@ -14,6 +14,6 @@ def test_classic_plot():
     xs = np.linspace(-2, 2, 41)
     fig.add('b', 'l', xs, np.pow(xs, 2), ls=LineSetup(Color.BLUE))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)
-    assert check_identical_pdf(path_pdf)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
     # TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)
