@@ -9,7 +9,7 @@ The aim is merely to provide convenient functions for the most common cases of p
 
 | **Latex Generated** | **Typst Generated** |
 |:---:|:---:|
-| <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" style="width:400px;"/></a> | <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" style="width:400px;"/></a> |
+| <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" width="400"/></a> | <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" width="400"/></a> |
 
 
 ## Installation in a local venv
