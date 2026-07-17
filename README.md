@@ -5,6 +5,13 @@
 This project does not claim to be a complete wrapper of all features of pgfplot.
 The aim is merely to provide convenient functions for the most common cases of plots.
 
+## Example plots
+
+| **Latex Generated** | **Typst Generated** |
+|:---:|:---:|
+| <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" style="width:400px;"/></a> | <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" style="width:400px;"/></a> |
+
+
 ## Installation in a local venv
 
 ```bash

@@ -6,6 +6,9 @@ import numpy as np
 # apt: sudo apt install python3-opencv
 # pip: pip3 install opencv-python
 
+PATH_OUTPUT_DIR_LATEX = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out-latex')
+PATH_OUTPUT_DIR_TYPST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out-typst')
+
 
 def render_pdf_to_png(path_pdf: str, path_png: str, dpi: int = 300):
     cmd = ['convert', '-density', str(dpi), path_pdf, '-quality', '100', path_png]
