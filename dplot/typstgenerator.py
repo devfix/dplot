@@ -112,6 +112,11 @@ class TypstGenerator:
             return f'({formatted[0]},)'
         return f'({", ".join(formatted)})'
 
+    def __fmt_thickness(self, thickness: AnyThickness) -> str:
+        if isinstance(thickness, Thickness):
+            thickness = thickness.value
+        return f'{thickness:.3f}pt'
+
     def __translate_style(self, style_str: LineStyle) -> str:
         return LILAQ_LINE_STYLE_MAP.get(style_str, '"solid"')
 

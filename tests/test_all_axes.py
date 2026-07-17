@@ -1,6 +1,4 @@
 import inspect
-
-from dplot import color
 from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
 from dplot import *
 
@@ -10,15 +8,15 @@ def test_all_axes():
     fig = Figure(title, margin={'t': 10, 'b': 10, 'l': 10, 'r': 10}, legend_setup=LegendSetup(enable=False))
     fig.axes['b'] = AxisSetup(
         'bottom', scale=1,
-        tick=TickSetup(enable=True, minor_thickness='very thin', major_thickness='very thick', minor_color=Color.LIGHTGRAY, minor_num=4),
-        grid=GridSetup(major_enable=True, major_thickness='very thick', minor_enable=True, minor_color=Color.LIGHTGRAY, minor_thickness='thin'),
+        tick=TickSetup(enable=True, minor_thickness=Thickness.VERY_THIN, major_thickness=Thickness.VERY_THICK, minor_color=Color.LIGHTGRAY, minor_num=4),
+        grid=GridSetup(major_enable=True, major_thickness=Thickness.VERY_THICK, minor_enable=True, minor_color=Color.LIGHTGRAY, minor_thickness=Thickness.THIN),
         label_shift=2
     )
     fig.axes['l'] = AxisSetup('left', log=True, tick=TickSetup(enable=True), label_shift=7)
     fig.axes['r'] = AxisSetup('right', tick=TickSetup(enable=True), label_shift=4)
     fig.axes['t'] = AxisSetup(
         'top', scale=1,
-        tick=TickSetup(enable=True, minor_thickness='thin', major_thickness='thick', minor_num=1),
+        tick=TickSetup(enable=True, minor_thickness=Thickness.THIN, major_thickness=Thickness.THICK, minor_num=1),
         grid=GridSetup(major_enable=False),
         label_shift=2
     )

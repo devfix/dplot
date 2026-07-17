@@ -111,6 +111,11 @@ class LatexGenerator:
     def __fmt_flt(self, x: float) -> str:
         return f'{x:.20e}'
 
+    def __fmt_thickness(self, thickness: AnyThickness) -> str:
+        if isinstance(thickness, Thickness):
+            thickness = thickness.value
+        return f'{thickness:.3f}pt'
+
     def __create_doc_begin(self) -> list[str]:
         out = ['%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%']
         out += ['% auto-generated using dplot %']
@@ -121,7 +126,7 @@ class LatexGenerator:
         out += [r'\setlength\figurewidth{' + f'{self.fig.width:.3f}' + r'mm}']
         out += [r'\setlength\figureheight{' + f'{self.fig.height:.3f}' + r'mm}']
         out += [r'\begin{tikzpicture}[font=\normalsize]']
-        out += [r'\pgfplotsset{every axis/.append style={' + self.fig.basic_thickness + r'},compat=1.18},']
+        out += [r'\pgfplotsset{every axis/.append style={line width=' + self.__fmt_thickness(self.fig.basic_thickness) + r'},compat=1.18},']
         return out
 
     def __get_axis_param(self, axis_kind: Literal['x', 'y'], axis_setup: Union[AxisSetup, None], limits: Union[None, tuple[float, float]] = None) -> list[str]:
@@ -190,15 +195,15 @@ class LatexGenerator:
                 r'xticklabel=\empty',
                 r'yticklabel=\empty',
                 f'{axis_kind}majorgrids={str(axis_setup.grid.major_enable).lower()}',
-                f'major grid style={{{axis_setup.grid.major_thickness},{color_to_pgfplots_options(axis_setup.grid.major_color)}}}',
+                f'major grid style={{line width={self.__fmt_thickness(axis_setup.grid.major_thickness)},{color_to_pgfplots_options(axis_setup.grid.major_color)}}}',
                 f'{axis_kind}minorgrids={str(axis_setup.grid.minor_enable).lower()}',
-                f'minor grid style={{{axis_setup.grid.minor_thickness},{color_to_pgfplots_options(axis_setup.grid.minor_color)}}}',
+                f'minor grid style={{line width={self.__fmt_thickness(axis_setup.grid.minor_thickness)},{color_to_pgfplots_options(axis_setup.grid.minor_color)}}}',
                 f'{axis_kind}tick=' + ('' if axis_setup.tick.enable else r'\empty'),  # enable / disable major tick
                 f'{axis_kind_op}tick=\\empty',  # disable tick of adjacent axes
                 f'{axis_kind}tick pos=' + (r'both' if axis_setup.tick.opposite else Figure.get_axis_pos(axis)),
                 f'{axis_kind}tick distance=' + (self.__fmt_flt(axis_setup.tick.major_distance) if axis_setup.tick.major_distance is not None else r''),
-                f'major {axis_kind} tick style={{{axis_setup.tick.major_thickness},{color_to_pgfplots_options(axis_setup.tick.major_color)}}}',
-                f'minor {axis_kind} tick style={{{axis_setup.tick.minor_thickness},{color_to_pgfplots_options(axis_setup.tick.minor_color)}}}',
+                f'major {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.major_thickness)},{color_to_pgfplots_options(axis_setup.tick.major_color)}}}',
+                f'minor {axis_kind} tick style={{line width={self.__fmt_thickness(axis_setup.tick.minor_thickness)},{color_to_pgfplots_options(axis_setup.tick.minor_color)}}}',
                 f'minor {axis_kind} tick num={axis_setup.tick.minor_num}',
             ]
             out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']

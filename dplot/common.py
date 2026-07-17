@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 import math
 from typing import Union, Literal, Collection
 from .color import Color, AnyColor
@@ -6,12 +6,24 @@ from .color import Color, AnyColor
 # https://tikz.dev/pgfplots/reference-markers
 
 
+class Thickness(Enum):
+    ULTRA_THIN = 0.1
+    VERY_THIN = 0.2
+    THIN = 0.4
+    SEMITHICK = 0.6
+    THICK = 0.8
+    VERY_THICK = 1.2
+    ULTRA_THICK = 1.6
+
+
+AnyThickness = Union[Thickness, float]
+
+
 TypeData = Collection  # requires type to be sized and iterable
 XAxis = Literal['t', 'b']  # top, bottom
 YAxis = Literal['l', 'r']  # left, right
 LineStyle = Literal['', 'solid', 'dotted', 'densely dotted', 'loosely dotted', 'dashed', 'densely dashed', 'loosely dashed', 'dashdotted',
 'densely dashdotted', 'loosely dashdotted', 'dashdotdotted', 'densely dashdotdotted', 'loosely dashdotdotted']
-PlotThickness = Literal['very thin', 'thin', 'thick', 'very thick']
 LineWidth = str
 Marker = Literal[
     '', '*', 'x', '+', '-', '|', 'o', 'asterisk', 'star', '10-pointed star', 'oplus', 'oplus*', 'otimes', 'otimes*', 'square', 'square*', 'triangle',
@@ -25,21 +37,15 @@ class Environment:
     PATH_SCOUR = 'scour'
 
 
-class ExportType(enum.Enum):
-    LATEX = enum.auto()
-    PDF = enum.auto()
-    SVG = enum.auto()
-
-
 class GridSetup:
     def __init__(
             self,
             major_enable: bool = False,
-            major_thickness: PlotThickness = 'thin',
+            major_thickness: AnyThickness = Thickness.THIN,  # in pt
             major_color: AnyColor = Color.BLACK,
             minor_enable: bool = False,
             minor_color: AnyColor = Color.BLACK,
-            minor_thickness: PlotThickness = 'very thin'
+            minor_thickness: AnyThickness = Thickness.VERY_THIN  # in pt
     ):
         self.major_enable = major_enable
         self.major_thickness = major_thickness
@@ -54,10 +60,10 @@ class TickSetup:
             self,
             enable: bool = True,  # enable / disable tick
             opposite: bool = False,  # enable ticks on opposite axis
-            major_thickness: PlotThickness = 'thin',
+            major_thickness: AnyThickness = Thickness.THIN,  # in pt
             major_color: AnyColor = Color.BLACK,
             major_distance: Union[float, None] = None,
-            minor_thickness: PlotThickness = 'thin',
+            minor_thickness: AnyThickness = Thickness.THIN,  # in pt
             minor_color: AnyColor = Color.GRAY,
             minor_num: int = 0
     ):

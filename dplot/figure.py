@@ -4,8 +4,6 @@ import subprocess
 import sys
 from typing import cast, get_args
 import numpy as np
-
-from .color import AnyColor
 from .common import *
 
 
@@ -18,7 +16,7 @@ class Figure:
             width: float = 50,  # in mm
             height: float = 50,  # in mm
             margin=None,
-            basic_thickness: PlotThickness = 'thick',
+            basic_thickness: AnyThickness = Thickness.THICK,  # in pt
             background_color: AnyColor = Color.WHITE,
             legend_setup: LegendSetup = LegendSetup()
     ):
@@ -27,7 +25,7 @@ class Figure:
         self.width: float = width
         self.height: float = height
         self.margin = {'t': 5, 'b': 5, 'l': 15, 'r': 15} if margin is None else margin
-        self.basic_thickness: PlotThickness = basic_thickness
+        self.basic_thickness: AnyThickness = basic_thickness  # in pt
         self.background_color: AnyColor = background_color
         self.legend_setup = legend_setup
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
@@ -46,59 +44,6 @@ class Figure:
             label: str = '',
             ls: Union[LineSetup, None] = None):
         self.add_data(Data(ax, ay, dx, dy, label, ls))
-
-    def plot(
-            self,
-            ax: XAxis,
-            ay: YAxis,
-            dx: TypeData,
-            dy: TypeData,
-            label: str = '',
-            ls: Union[LineSetup, None] = None
-    ) -> Data:
-        data = Data(ax=ax, ay=ay, dx=dx, dy=dy, label=label, ls=ls)
-        self.add(data)
-        return data
-
-    def export(self, path_out_dir: str, *types, quiet=True):
-        types: list[ExportType] = list(types)
-        if len(types) == 0:
-            raise RuntimeError('at least one output type is required')
-        for t in types:
-            assert isinstance(t, ExportType)
-        required_types = set(types)
-        if ExportType.SVG in required_types:
-            required_types.add(ExportType.PDF)
-        if ExportType.PDF in required_types:
-            required_types.add(ExportType.LATEX)
-
-        path_out_dir = os.path.abspath(path_out_dir)
-        path_latex = os.path.join(path_out_dir, self.name + '.tex')
-        path_pdf = os.path.join(path_out_dir, self.name + '.pdf')
-        path_svg = os.path.join(path_out_dir, self.name + '.svg')
-        os.makedirs(path_out_dir, exist_ok=True)
-
-        if ExportType.LATEX in required_types:
-            with open(path_latex, 'w') as fp:
-                fp.write('\n'.join(self.get_latex_code()))
-        if ExportType.PDF in required_types:
-            self._cvt_latex_to_pdf(path_latex, path_pdf, quiet)
-        if ExportType.SVG in required_types:
-            self._cvt_pdf_to_svg(path_pdf, path_svg, quiet)
-
-        if ExportType.LATEX not in types and os.path.exists(path_latex):
-            os.remove(path_latex)
-        if ExportType.PDF not in types and os.path.exists(path_pdf):
-            os.remove(path_pdf)
-        if ExportType.SVG not in types and os.path.exists(path_svg):
-            os.remove(path_svg)
-
-        type_map = {
-            ExportType.LATEX: path_latex,
-            ExportType.PDF: path_pdf,
-            ExportType.SVG: path_svg
-        }
-        return tuple([type_map[t] for t in types])
 
     def _cvt_pdf_to_svg(self, path_pdf: str, path_svg: str, quiet: bool):
         if shutil.which(Environment.PATH_PDF2SVG) is None:
