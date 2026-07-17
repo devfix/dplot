@@ -116,21 +116,30 @@ class TypstGenerator:
         return f'rgb({col.r}, {col.g}, {col.b})'
 
     def __fmt_marker(self, marker: Marker, color: AnyColor) -> str:
-        """Returns the native Typst/Lilaq marker shorthand."""
+        """Returns the native Typst/Lilaq marker closure bound to the plot line color."""
+        # Mapping maps each Marker to a tuple: (Lilaq function token, inner fill expression)
         mapping = {
-            Marker.NONE: 'mark: none',
-            Marker.DOT: 'mark: "o", mark-fill: ' + self.__fmt__color(color),
-            Marker.CIRCLE: 'mark: "o"',
-            Marker.SQUARE: 'mark: "s"',
-            Marker.TRIANGLE: 'mark: "^"',
-            Marker.DIAMOND: 'mark: "d"',
-            Marker.CROSS: 'mark: "x"',
-            Marker.PLUS: 'mark: "+"',
-            Marker.ASTERISK: 'mark: "star"',
+            Marker.NONE: ('none', 'none'),
+            Marker.DOT: ('lq.marks.o', 'fill'),        # Filled circle
+            Marker.CIRCLE: ('lq.marks.o', 'none'),     # Open circle
+            Marker.SQUARE: ('lq.marks.s', 'none'),     # Open square
+            Marker.TRIANGLE: ('lq.marks.^', 'none'), # Open triangle
+            Marker.DIAMOND: ('lq.marks.d', 'none'),   # Open diamond
+            Marker.CROSS: ('lq.marks.x', 'none'),
+            Marker.PLUS: ('lq.marks.+', 'none'),
+            Marker.ASTERISK: ('lq.marks.asterisk', 'none'),
         }
         if marker not in Marker:
             raise ValueError(marker)
-        return cast(str, mapping.get(marker))
+        if marker == Marker.NONE:
+            return 'mark: none'
+
+        mark_func, inner_fill = mapping.get(marker, ('lq.marks.circle', 'none'))
+        col_str = self.__fmt__color(color)
+
+        # Passes inner_fill (either 'fill' for a solid color or 'none' for open shapes)
+        # straight into the low-level mark template constructor.
+        return f'mark: ((mark, fill: {col_str}, stroke: {col_str}) => ({mark_func})((size: mark.size, stroke: stroke, fill: {inner_fill})))'
 
     # ==========================================
     # Document Construction
@@ -372,11 +381,12 @@ class TypstGenerator:
             stroke_val = f'(paint: {color_str}, thickness: {thick_str}, dash: {dash_str})'
             plot_args.append(f'stroke: {stroke_val},')
 
+        # The updated __fmt_marker outputs the interceptor closure directly
         marker_str = self.__fmt_marker(data.ls.marker, data.ls.plot_color)
         plot_args.append(f'{marker_str},')
 
         if data.ls.marker != Marker.NONE and data.ls.marker_repeat > 1:
-            plot_args.append(f'mark-step: {data.ls.marker_repeat},')
+            plot_args.append(f'every: {data.ls.marker_repeat},')
 
         lines = ['  lq.plot(']
         for pa in plot_args:
