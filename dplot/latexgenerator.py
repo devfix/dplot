@@ -40,7 +40,7 @@ class LatexGenerator:
     def get_latex_code(self) -> list[str]:
         self.fig.validate()
         out = self.__create_doc_begin()
-        out += self.__create_plot_margin()
+        # out += self.__create_plot_margin()
         out += self.__create_background()
         for ax in get_args(XAxis):
             for ay in get_args(YAxis):
@@ -368,7 +368,22 @@ class LatexGenerator:
         return out
 
     def __create_doc_end(self) -> list[str]:
-        return [
+        m = self.fig.margin
+
+        # Calculate exact margin expansions relative to the inner data box
+        bb_override = [
+            r'',
+            r'%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
+            r'% Enforce exact margins relative to data area    %',
+            r'%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
+            r'\pgfresetboundingbox',
+            f'\\path[use as bounding box]',
+            f'  ([xshift=-{m["l"]:.3f}mm, yshift=-{m["b"]:.3f}mm]current axis.south west)',
+            f'  rectangle',
+            f'  ([xshift={m["r"]:.3f}mm, yshift={m["t"]:.3f}mm]current axis.north east);'
+        ]
+
+        return bb_override + [
             r'\end{tikzpicture}',
             r'\end{document}',
         ]

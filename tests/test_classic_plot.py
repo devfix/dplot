@@ -1,5 +1,6 @@
 import inspect
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
+
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX, PATH_OUTPUT_DIR_TYPST
 import numpy as np
 from dplot import *
 
@@ -14,6 +15,7 @@ def test_classic_plot():
     xs = np.linspace(-2, 2, 41)
     fig.add('b', 'l', xs, np.pow(xs, 2), ls=LineSetup(Color.BLUE))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
-    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
-    # TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)
+    # path_latex, path_latex_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
+    # assert check_identical_pdf(path_latex_pdf)  # check that pdf looks as expected
+    assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected

@@ -223,19 +223,6 @@ AnyColor = Union[Color, RGBAColor, Tuple[int, int, int], str]
 
 
 
-def color_to_lilaq_color(color: AnyColor) -> str:
-    """
-    Converts a Color enum, RGBAColor, tuple, or string name to a valid Typst/Lilaq color string.
-    Example output: 'rgb(31, 119, 180)' or 'rgb(255, 0, 0, 50%)'
-    """
-    col = _resolve_color(color)
-    if col.a < 1.0:
-        alpha_pct = round(col.a * 100, 1)
-        alpha_str = f"{int(alpha_pct)}%" if alpha_pct.is_integer() else f"{alpha_pct}%"
-        return f'rgb({col.r}, {col.g}, {col.b}, {alpha_str})'
-    return f'rgb({col.r}, {col.g}, {col.b})'
-
-
 def _resolve_color(val: AnyColor) -> RGBAColor:
     """Helper to convert any acceptable color format into a standardized RGBAColor."""
     if isinstance(val, RGBAColor):

@@ -1,7 +1,7 @@
 from enum import Enum
 import math
 from typing import Union, Literal, Collection
-from .color import Color, AnyColor, color_to_lilaq_color
+from .color import Color, AnyColor
 
 
 # https://tikz.dev/pgfplots/reference-markers
@@ -52,48 +52,6 @@ class Marker(Enum):
     CROSS = 'cross'
     PLUS = 'plus'
     ASTERISK = 'asterisk'
-
-
-def linestyle_to_lilaq_style(style: LineStyle) -> str:
-    """
-    Returns the appropriate Typst stroke definition.
-    Uses native shorthands for standard styles, and custom dash arrays for variants.
-    """
-    mapping = {
-        # Native Lilaq/Typst shorthands
-        LineStyle.SOLID: '"solid"',
-        LineStyle.DOTTED: '"dotted"',
-        LineStyle.DASHED: '"dashed"',
-        LineStyle.DASH_DOTTED: '"dash-dotted"',
-
-        # Custom patterns for variants
-        LineStyle.DENSELY_DOTTED: '(array: (1pt, 1pt), phase: 0pt)',
-        LineStyle.LOOSELY_DOTTED: '(array: (1pt, 4pt), phase: 0pt)',
-        LineStyle.DENSELY_DASHED: '(array: (2pt, 2pt), phase: 0pt)',
-        LineStyle.LOOSELY_DASHED: '(array: (6pt, 6pt), phase: 0pt)',
-        LineStyle.DENSELY_DASH_DOTTED: '(array: (2pt, 1pt, 1pt, 1pt), phase: 0pt)',
-        LineStyle.LOOSELY_DASH_DOTTED: '(array: (4pt, 2pt, 1pt, 2pt), phase: 0pt)',
-
-        # Fallback for others
-        LineStyle.NONE: 'none'
-    }
-    return mapping.get(style, '"solid"')
-
-
-def to_lilaq_marker(marker: Marker, color: AnyColor) -> str:
-    """Returns the native Typst/Lilaq marker shorthand."""
-    mapping = {
-        Marker.NONE: 'none',
-        Marker.DOT: 'mark: "o", mark-fill: ' + color_to_lilaq_color(color),
-        Marker.CIRCLE: 'mark: "o"',
-        Marker.SQUARE: 'mark: "s"',
-        Marker.TRIANGLE: 'mark: "^"',
-        Marker.DIAMOND: 'mark: "d"',
-        Marker.CROSS: 'v"x"',
-        Marker.PLUS: 'mark: "+"',
-        Marker.ASTERISK: 'mark: "star"',
-    }
-    return mapping.get(marker, 'none')
 
 
 class Environment:
