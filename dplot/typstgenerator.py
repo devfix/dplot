@@ -158,23 +158,19 @@ class TypstGenerator:
         If multiple axis pairs are used (e.g., bottom-left and top-right), they are
         rendered as overlaid diagrams inside a Typst block container.
         """
-        # Find all active (ax, ay) combinations in the plotted data
         active_pairs = []
         for data in self.fig.plot_data:
             pair = (data.ax, data.ay)
             if pair not in active_pairs:
                 active_pairs.append(pair)
 
-        # Fallback to bottom/left if no data sets are present
         if not active_pairs:
             active_pairs = [('b', 'l')]
 
-        # If only one axis pair is needed, generate a single diagram cleanly
         if len(active_pairs) == 1:
             ax, ay = active_pairs[0]
             return self.__create_diagram(ax, ay, is_primary=True)
 
-        # For multi-axis setups, wrap diagrams in a block container matching the data area dimensions
         out = [
             f'#block(width: {self.fig.width:.3f}mm, height: {self.fig.height:.3f}mm, [',
         ]
@@ -188,26 +184,27 @@ class TypstGenerator:
         return out
 
     def __create_diagram(self, ax: XAxis, ay: YAxis, is_primary: bool) -> list[str]:
-        """Configures an individual lq.diagram container, axes, grids, and legend."""
+        """Configures an individual lq.diagram container, axes, grids, ticks, and legend."""
         asx = cast(AxisSetup, self.fig.axes.get(ax))
         asy = cast(AxisSetup, self.fig.axes.get(ay))
 
         args = [
-            'bounds: "data-area"',  # Locks element boundary to the inner plot box!
+            'bounds: "data-area"',
             f'width: {self.fig.width:.3f}mm',
             f'height: {self.fig.height:.3f}mm',
         ]
 
-        # Apply title and background color only to the primary layer
         if is_primary:
             if self.fig.title:
                 args.append(f'title: [{self.fig.title}]')
             if self.fig.background_color != Color.WHITE:
                 args.append(f'fill: {self.__fmt__color(self.fig.background_color)}')
         else:
-            args.append('fill: none')  # Transparent background for overlays
+            args.append('fill: none')
 
-        # Configure X-Axis
+        # ==========================================
+        # X-Axis & Ticks Configuration
+        # ==========================================
         if asx:
             if asx.limits:
                 args.append(f'xlim: ({self.__fmt_flt(asx.limits[0])}, {self.__fmt_flt(asx.limits[1])})')
@@ -215,10 +212,28 @@ class TypstGenerator:
                 args.append(f'xlabel: [{asx.label}]')
             if asx.log:
                 args.append('xscale: "log"')
-            if asx.tick.major_distance is not None:
-                args.append(f'xticks: (step: {self.__fmt_flt(asx.tick.major_distance)})')
 
-        # Configure Y-Axis
+            x_tick_opts = []
+            if not asx.tick.enable:
+                x_tick_opts.append('ticks: none')
+                x_tick_opts.append('subticks: none')
+            else:
+                if asx.tick.major_distance is not None:
+                    x_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asx.tick.major_distance)})')
+                if asx.tick.minor_num > 0:
+                    x_tick_opts.append(f'subticks: {asx.tick.minor_num}')
+                else:
+                    x_tick_opts.append('subticks: none')
+                if asx.tick.opposite:
+                    x_tick_opts.append('mirror: (ticks: true, tick-labels: false)')
+                else:
+                    x_tick_opts.append('mirror: (ticks: false)')
+            if x_tick_opts:
+                args.append(f'xaxis: ({", ".join(x_tick_opts)})')
+
+        # ==========================================
+        # Y-Axis & Ticks Configuration
+        # ==========================================
         if asy:
             if asy.limits:
                 args.append(f'ylim: ({self.__fmt_flt(asy.limits[0])}, {self.__fmt_flt(asy.limits[1])})')
@@ -226,15 +241,30 @@ class TypstGenerator:
                 args.append(f'ylabel: [{asy.label}]')
             if asy.log:
                 args.append('yscale: "log"')
-            if asy.tick.major_distance is not None:
-                args.append(f'yticks: (step: {self.__fmt_flt(asy.tick.major_distance)})')
+
+            y_tick_opts = []
+            if not asy.tick.enable:
+                y_tick_opts.append('ticks: none')
+                y_tick_opts.append('subticks: none')
+            else:
+                if asy.tick.major_distance is not None:
+                    y_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asy.tick.major_distance)})')
+                if asy.tick.minor_num > 0:
+                    y_tick_opts.append(f'subticks: {asy.tick.minor_num}')
+                else:
+                    y_tick_opts.append('subticks: none')
+                if asy.tick.opposite:
+                    y_tick_opts.append('mirror: (ticks: true, tick-labels: false)')
+                else:
+                    y_tick_opts.append('mirror: (ticks: false)')
+            if y_tick_opts:
+                args.append(f'yaxis: ({", ".join(y_tick_opts)})')
 
         # ==========================================
         # Comprehensive Grid Configuration
         # ==========================================
         prefix_rules = []
         if is_primary:
-            # Helper to determine stroke string for an axis and grid type
             def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool) -> str:
                 if not axis_setup:
                     return "none"
@@ -251,16 +281,45 @@ class TypstGenerator:
             y_min = get_grid_stroke(asy, is_major=False)
 
             if x_maj == y_maj and x_min == y_min:
-                # Both X and Y axes share the exact same grid configuration
-                # When major_enable/minor_enable are False, this outputs (stroke: none, stroke-sub: none)
                 args.append(f'grid: (stroke: {x_maj}, stroke-sub: {x_min})')
             else:
-                # X and Y axes have independent grid configurations; use Lilaq's cond-set rules
                 prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "x"), stroke: {x_maj}, stroke-sub: {x_min})')
                 prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "y"), stroke: {y_maj}, stroke-sub: {y_min})')
         else:
-            # Overlays must never draw redundant grid lines
             args.append('grid: (stroke: none, stroke-sub: none)')
+
+        # ==========================================
+        # Comprehensive Tick Styling
+        # ==========================================
+        def get_tick_stroke(axis_setup: Union[AxisSetup, None], is_major: bool) -> str:
+            if not axis_setup or not axis_setup.tick.enable:
+                return "none"
+            if not is_major and axis_setup.tick.minor_num <= 0:
+                return "none"
+            ref_tick = axis_setup.tick
+            thickness = self.__fmt_thickness(ref_tick.major_thickness if is_major else ref_tick.minor_thickness)
+            color = self.__fmt__color(ref_tick.major_color if is_major else ref_tick.minor_color)
+            return f"{thickness} + {color}"
+
+        x_tick_maj = get_tick_stroke(asx, is_major=True)
+        y_tick_maj = get_tick_stroke(asy, is_major=True)
+        x_tick_min = get_tick_stroke(asx, is_major=False)
+        y_tick_min = get_tick_stroke(asy, is_major=False)
+
+        if x_tick_maj == y_tick_maj and x_tick_min == y_tick_min:
+            if x_tick_maj != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(sub: false), stroke: {x_tick_maj})')
+            if x_tick_min != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(sub: true), stroke: {x_tick_min})')
+        else:
+            if x_tick_maj != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(kind: "x", sub: false), stroke: {x_tick_maj})')
+            if x_tick_min != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(kind: "x", sub: true), stroke: {x_tick_min})')
+            if y_tick_maj != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(kind: "y", sub: false), stroke: {y_tick_maj})')
+            if y_tick_min != "none":
+                prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(kind: "y", sub: true), stroke: {y_tick_min})')
 
         # Legend configuration
         if is_primary and self.fig.legend_setup.enable:
@@ -279,7 +338,6 @@ class TypstGenerator:
         for arg in args:
             out.append(f'  {arg},')
 
-        # Inject plot data belonging to this specific axis group
         for data in self.fig.plot_data:
             if data.ax == ax and data.ay == ay:
                 out += self.__create_plot_call(data, asx, asy)
@@ -289,7 +347,6 @@ class TypstGenerator:
 
     def __create_plot_call(self, data: Data, asx: Union[AxisSetup, None], asy: Union[AxisSetup, None]) -> list[str]:
         """Translates data arrays and LineSetup into lq.plot() calls, applying axis scaling."""
-        # Apply axis scaling factor to raw coordinates
         scale_x = asx.scale if asx else 1.0
         scale_y = asy.scale if asy else 1.0
         scaled_dx = [x * scale_x for x in data.dx]
@@ -306,7 +363,6 @@ class TypstGenerator:
         if data.label:
             plot_args.append(f'label: [{data.label}],')
 
-        # Configure Stroke (Color, Thickness, Dash Pattern)
         if data.ls.line_style == LineStyle.NONE:
             plot_args.append('stroke: none,')
         else:
@@ -316,7 +372,6 @@ class TypstGenerator:
             stroke_val = f'(paint: {color_str}, thickness: {thick_str}, dash: {dash_str})'
             plot_args.append(f'stroke: {stroke_val},')
 
-        # Configure Markers and Repeat Step
         marker_str = self.__fmt_marker(data.ls.marker, data.ls.plot_color)
         plot_args.append(f'{marker_str},')
 
