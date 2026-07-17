@@ -1,8 +1,10 @@
 # dplot
 
-**Minimal pgfplot wrapper for python**
+**Minimal python wrapper for pgfplot (LaTex) and lilaq (Typst)**
 
-This project does not claim to be a complete wrapper of all features of pgfplot.
+<hr/>
+
+This project does not claim to be a complete wrapper of all features the plotting libraries support.
 The aim is merely to provide convenient functions for the most common cases of plots.
 
 ## Example plots
@@ -13,7 +15,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
 
 <br/>
 **Important notice**: The plots are not necessarily intended to look nice and rather just show many
- features of dplot.
+ features of dplot. You can customize it to your favor :)
 <br/>
 
 <table style="background-color: white;">
@@ -33,6 +35,18 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_classic_plot.expected.png" width="400"/>
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_s_parameters.expected.png" width="400"/>
+        </a>
+      </td>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_s_parameters.expected.png" width="400"/>
         </a>
       </td>
     </tr>
