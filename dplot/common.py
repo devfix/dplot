@@ -108,7 +108,6 @@ class AxisSetup:
             log: bool = False,
             log_base: str = '10',  # no float, otherwise the number of digits is not clear
             limits: Union[None, tuple[float, float]] = None,
-            padding: float = 0,
             grid: GridSetup = GridSetup(),
             tick: TickSetup = TickSetup(),
     ):
@@ -118,7 +117,6 @@ class AxisSetup:
         self.log = log
         self.log_base = log_base
         self.limits = limits
-        self.padding = padding
         self.grid = grid
         self.tick = tick
 

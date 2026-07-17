@@ -10,12 +10,22 @@ from .common import *
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember
 class Figure:
-    def __init__(self, name: str, title: str = '', width: float = 50, height: float = 50, basic_thickness: PlotThickness = 'thick',
-                 background_color: PlotColor = 'white', legend_setup: LegendSetup = LegendSetup()):
+    def __init__(
+            self,
+            name: str,
+            title: str = '',
+            width: float = 50,  # in mm
+            height: float = 50,  # in mm
+            margin=None,
+            basic_thickness: PlotThickness = 'thick',
+            background_color: PlotColor = 'white',
+            legend_setup: LegendSetup = LegendSetup()
+    ):
         self.name: str = name
         self.title: str = title
         self.width: float = width
         self.height: float = height
+        self.margin = {'t': 5, 'b': 5, 'l': 15, 'r': 15} if margin is None else margin
         self.basic_thickness: PlotThickness = basic_thickness
         self.background_color: PlotColor = background_color
         self.legend_setup = legend_setup
