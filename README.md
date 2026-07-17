@@ -42,13 +42,13 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- s-parameters -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_s_parameters.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters_latex.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/s_parameters.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_s_parameters.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters_typst.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/s_parameters.expected.png" width="400"/>
         </a>
       </td>
     </tr>

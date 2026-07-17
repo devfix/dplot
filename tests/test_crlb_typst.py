@@ -42,7 +42,5 @@ def test_crlb_typst():
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
     fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))
 
-    # path_latex, path_latex_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
     path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
-    # assert check_identical_pdf(path_latex_pdf)  # check that pdf looks as expected
     assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected
