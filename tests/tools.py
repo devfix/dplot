@@ -20,10 +20,10 @@ def check_images_are_identical(path_a: str, path_b: str) -> bool:
 
 
 def check_identical_pdf(path_pdf: str) -> bool:
-    path_png_test = os.path.splitext(path_pdf)[0] + '.test.png'
-    path_png_expected = os.path.splitext(path_pdf)[0] + '.png'
-    render_pdf_to_png(path_pdf, path_png_test)
+    path_png_actual = os.path.splitext(path_pdf)[0] + '.actual.png'
+    path_png_expected = os.path.splitext(path_pdf)[0] + '.expected.png'
+    render_pdf_to_png(path_pdf, path_png_actual)
     if not os.path.exists(path_png_expected):
         raise FileNotFoundError(path_png_expected)
-    return check_images_are_identical(path_png_test, path_png_expected)
+    return check_images_are_identical(path_png_actual, path_png_expected)
 

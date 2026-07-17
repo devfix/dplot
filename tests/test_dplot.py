@@ -1,13 +1,13 @@
 import inspect
 import os.path
-import unittest
 from typing import cast
 import numpy as np
 from numpy import pi
 import pandas
 from pandas import DataFrame
-from dplot import *
 from tests.tools import check_identical_pdf
+
+from dplot import Figure, LegendSetup, TickSetup, GridSetup, AxisSetup, Data, LatexGenerator, ExportType, LineSetup
 
 PATH_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out')
 
@@ -20,7 +20,7 @@ def test_classic_bl():
     fig.axes['l'] = AxisSetup('y', scale=1, tick=ts)
     fig.add(Data('b', 'l', [-2, -1, 0, 1, 2], [5, 1, 0, 1, 5]))
 
-    path_pdf, = fig.export(PATH_OUTPUT_DIR, ExportType.PDF)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
     assert check_identical_pdf(path_pdf)
 
 
@@ -44,7 +44,7 @@ def test_all_axes():
     fig.add(Data('t', 'l', [-2, -1, 0], [4, 6, 4], ls=LineSetup(line_style='solid', marker='square', marker_repeat=2, marker_phase=2)))
     fig.add(Data('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color='black', line_width='0.5')))
 
-    path_pdf, = fig.export(PATH_OUTPUT_DIR, ExportType.PDF)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
     assert check_identical_pdf(path_pdf)
 
 
@@ -67,7 +67,7 @@ def test_s_par():
     fig.add(Data('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi,
                  ls=LineSetup(line_style='dashed', marker='*', marker_repeat=20), label=r'$\angle S_{11}$'))
 
-    path_pdf, = fig.export(PATH_OUTPUT_DIR, ExportType.PDF)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
     assert check_identical_pdf(path_pdf)
 
 
@@ -106,5 +106,5 @@ def test_crlb():
     fig.add(Data('b', 'l', f0s, crlb_exact, label='exact'))
     fig.add(Data('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style='dotted')))
 
-    path_pdf, = fig.export(PATH_OUTPUT_DIR, ExportType.PDF)
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR)
     assert check_identical_pdf(path_pdf)

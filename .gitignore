@@ -4,7 +4,7 @@
 
 *.tex
 *.pdf
-*.test.png
+*.actual.png
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

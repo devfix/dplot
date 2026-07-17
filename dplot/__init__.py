@@ -1,1 +1,3 @@
-from .dplot import AxisSetup, LineSetup, Figure, TickSetup, GridSetup, Data, LegendSetup, ExportType
+from .common import *
+from .figure import Figure
+from .latexgenerator import LatexGenerator
