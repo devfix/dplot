@@ -26,6 +26,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     </tr>
   </thead>
   <tbody>
+    <!-- classic plot -->
     <tr>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
@@ -38,6 +39,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
         </a>
       </td>
     </tr>
+    <!-- s-parameters -->
     <tr>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
@@ -50,18 +52,20 @@ Just ignore the import of `tests.tools` and the `assert` statements.
         </a>
       </td>
     </tr>
+    <!-- crlb -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb_10.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb_latex.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/crlb_10.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb_10.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb_typst.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/crlb_10.expected.png" width="400"/>
         </a>
       </td>
     </tr>
+    <!-- all axes -->
     <tr>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">

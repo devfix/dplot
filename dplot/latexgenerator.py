@@ -40,7 +40,6 @@ class LatexGenerator:
     def get_latex_code(self) -> list[str]:
         self.fig.validate()
         out = self.__create_doc_begin()
-        # out += self.__create_plot_margin()
         out += self.__create_background()
         for ax in get_args(XAxis):
             for ay in get_args(YAxis):
@@ -168,33 +167,6 @@ class LatexGenerator:
             f'{axis_kind}min={self.__fmt_flt(limits[0])}',
             f'{axis_kind}max={self.__fmt_flt(limits[1])}',
         ]
-
-    def __create_plot_margin(self) -> list[str]:
-        out = ['']
-        out += ['%%%%%%%%%%%%%%%%%']
-        out += ['% figure margin %']
-        out += ['%%%%%%%%%%%%%%%%%']
-        for axis in get_args(XAxis) + get_args(YAxis):
-            axis_kind = Figure.get_axis_kind(axis)
-            axis_kind_op = Figure.get_opposite_axis_kind(axis_kind)
-            params = [
-                f'scale only axis',
-                f'width={self.fig.width:.3f}mm',
-                f'height={self.fig.height:.3f}mm',
-                f'{axis_kind}min=0',
-                f'{axis_kind}max=1',
-                f'{axis_kind_op}min=0',
-                f'{axis_kind_op}max=1',
-                r'xtick=\empty',
-                r'ytick=\empty',
-                f'hide {axis_kind_op} axis=true',
-                f'{axis_kind}tick style={{draw=none}}',
-                f'{axis_kind}label=' + (r'{\hphantom{-}}' if axis_kind == 'y' else r'{\vphantom{-}}'),
-                f'{axis_kind}label shift={self.fig.margin[axis]:.3f}mm',
-                f'{axis_kind}ticklabel pos={Figure.get_axis_pos(axis)}',
-            ]
-            out += [r'\begin{axis}% ' + f'{axis}-axis', r'['] + [f'  {p},' for p in params] + [r']', r'\end{axis}']
-        return out
 
     def __create_background(self) -> list[str]:
         out = ['']
