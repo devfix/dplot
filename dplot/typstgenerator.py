@@ -146,7 +146,6 @@ class TypstGenerator:
             '#set page(',
             '  width: auto,',
             '  height: auto,',
-            # Margins are defined on the page; with bounds: "data-area", they start from the plot box!
             f'  margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
             ')',
             ''
@@ -230,14 +229,38 @@ class TypstGenerator:
             if asy.tick.major_distance is not None:
                 args.append(f'yticks: (step: {self.__fmt_flt(asy.tick.major_distance)})')
 
-        # Grid configuration (drawn on primary layer only)
-        grid_enabled = is_primary and ((asx and asx.grid.major_enable) or (asy and asy.grid.major_enable))
-        if grid_enabled:
-            grid_stroke = self.__fmt_thickness(asx.grid.major_thickness if asx else Thickness.THIN)
-            grid_color = self.__fmt__color(asx.grid.major_color if asx else Color.BLACK)
-            args.append(f'grid: (stroke: {grid_stroke} + {grid_color})')
+        # ==========================================
+        # Comprehensive Grid Configuration
+        # ==========================================
+        prefix_rules = []
+        if is_primary:
+            # Helper to determine stroke string for an axis and grid type
+            def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool) -> str:
+                if not axis_setup:
+                    return "none"
+                enabled = axis_setup.grid.major_enable if is_major else axis_setup.grid.minor_enable
+                if not enabled:
+                    return "none"
+                thickness = self.__fmt_thickness(axis_setup.grid.major_thickness if is_major else axis_setup.grid.minor_thickness)
+                color = self.__fmt__color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
+                return f"{thickness} + {color}"
+
+            x_maj = get_grid_stroke(asx, is_major=True)
+            y_maj = get_grid_stroke(asy, is_major=True)
+            x_min = get_grid_stroke(asx, is_major=False)
+            y_min = get_grid_stroke(asy, is_major=False)
+
+            if x_maj == y_maj and x_min == y_min:
+                # Both X and Y axes share the exact same grid configuration
+                # When major_enable/minor_enable are False, this outputs (stroke: none, stroke-sub: none)
+                args.append(f'grid: (stroke: {x_maj}, stroke-sub: {x_min})')
+            else:
+                # X and Y axes have independent grid configurations; use Lilaq's cond-set rules
+                prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "x"), stroke: {x_maj}, stroke-sub: {x_min})')
+                prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "y"), stroke: {y_maj}, stroke-sub: {y_min})')
         else:
-            args.append('grid: none')
+            # Overlays must never draw redundant grid lines
+            args.append('grid: (stroke: none, stroke-sub: none)')
 
         # Legend configuration
         if is_primary and self.fig.legend_setup.enable:
@@ -252,7 +275,7 @@ class TypstGenerator:
         else:
             args.append('legend: none')
 
-        out = ['#lq.diagram(']
+        out = prefix_rules + ['#lq.diagram(']
         for arg in args:
             out.append(f'  {arg},')
 

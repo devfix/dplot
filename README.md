@@ -35,7 +35,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       </td>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_classic_plot.expected.png" width="400"/>
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_classic_plot.expected.png" width="400"/>
         </a>
       </td>
     </tr>
@@ -48,7 +48,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       </td>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_s_parameters.expected.png" width="400"/>
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_s_parameters.expected.png" width="400"/>
         </a>
       </td>
     </tr>
@@ -61,7 +61,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       </td>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb_typst.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/crlb_10.expected.png" width="400"/>
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/crlb_10.expected.png" width="400"/>
         </a>
       </td>
     </tr>
@@ -74,7 +74,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       </td>
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_all_axes.expected.png" width="400"/>
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_all_axes.expected.png" width="400"/>
         </a>
       </td>
     </tr>
