@@ -117,14 +117,13 @@ class TypstGenerator:
 
     def __fmt_marker(self, marker: Marker, color: AnyColor) -> str:
         """Returns the native Typst/Lilaq marker closure bound to the plot line color."""
-        # Mapping maps each Marker to a tuple: (Lilaq function token, inner fill expression)
         mapping = {
             Marker.NONE: ('none', 'none'),
-            Marker.DOT: ('lq.marks.o', 'fill'),        # Filled circle
-            Marker.CIRCLE: ('lq.marks.o', 'none'),     # Open circle
-            Marker.SQUARE: ('lq.marks.s', 'none'),     # Open square
-            Marker.TRIANGLE: ('lq.marks.^', 'none'), # Open triangle
-            Marker.DIAMOND: ('lq.marks.d', 'none'),   # Open diamond
+            Marker.DOT: ('lq.marks.o', 'fill'),  # Filled circle
+            Marker.CIRCLE: ('lq.marks.o', 'none'),  # Open circle
+            Marker.SQUARE: ('lq.marks.s', 'none'),  # Open square
+            Marker.TRIANGLE: ('lq.marks.^', 'none'),  # Open triangle
+            Marker.DIAMOND: ('lq.marks.d', 'none'),  # Open diamond
             Marker.CROSS: ('lq.marks.x', 'none'),
             Marker.PLUS: ('lq.marks.+', 'none'),
             Marker.ASTERISK: ('lq.marks.asterisk', 'none'),
@@ -137,8 +136,6 @@ class TypstGenerator:
         mark_func, inner_fill = mapping.get(marker, ('lq.marks.circle', 'none'))
         col_str = self.__fmt__color(color)
 
-        # Passes inner_fill (either 'fill' for a solid color or 'none' for open shapes)
-        # straight into the low-level mark template constructor.
         return f'mark: ((mark, fill: {col_str}, stroke: {col_str}) => ({mark_func})((size: mark.size, stroke: stroke, fill: {inner_fill})))'
 
     # ==========================================
@@ -178,21 +175,31 @@ class TypstGenerator:
 
         if len(active_pairs) == 1:
             ax, ay = active_pairs[0]
-            return self.__create_diagram(ax, ay, is_primary=True)
+            return self.__create_diagram(ax, ay, is_primary=True, draw_x=True, draw_y=True)
 
         out = [
             f'#block(width: {self.fig.width:.3f}mm, height: {self.fig.height:.3f}mm, [',
         ]
+
+        # Track which axis kinds have already been drawn to prevent double-rendering on overlays
+        drawn_x = set()
+        drawn_y = set()
+
         for idx, (ax, ay) in enumerate(active_pairs):
             is_primary = (idx == 0)
+            draw_x = ax not in drawn_x
+            draw_y = ay not in drawn_y
+            drawn_x.add(ax)
+            drawn_y.add(ay)
+
             out.append('  #place(top + left)[')
-            diag_lines = self.__create_diagram(ax, ay, is_primary=is_primary)
+            diag_lines = self.__create_diagram(ax, ay, is_primary=is_primary, draw_x=draw_x, draw_y=draw_y)
             out += [f'    {line}' for line in diag_lines]
             out.append('  ]')
         out.append('])')
         return out
 
-    def __create_diagram(self, ax: XAxis, ay: YAxis, is_primary: bool) -> list[str]:
+    def __create_diagram(self, ax: XAxis, ay: YAxis, is_primary: bool, draw_x: bool = True, draw_y: bool = True) -> list[str]:
         """Configures an individual lq.diagram container, axes, grids, ticks, and legend."""
         asx = cast(AxisSetup, self.fig.axes.get(ax))
         asy = cast(AxisSetup, self.fig.axes.get(ay))
@@ -217,13 +224,19 @@ class TypstGenerator:
         if asx:
             if asx.limits:
                 args.append(f'xlim: ({self.__fmt_flt(asx.limits[0])}, {self.__fmt_flt(asx.limits[1])})')
-            if asx.label and is_primary:
+            # FIXED: Check draw_x instead of is_primary so new top axes ('t') get their labels
+            if asx.label and draw_x:
                 args.append(f'xlabel: [{asx.label}]')
             if asx.log:
                 args.append('xscale: "log"')
 
             x_tick_opts = []
-            if not asx.tick.enable:
+            # FIXED: Add explicit position mapping for top axes ('t' / XAxis.TOP)
+            if ax in ('t', getattr(XAxis, 'TOP', 't')):
+                x_tick_opts.append('position: top')
+
+            # Suppress ticks if the axis was already drawn by an earlier diagram group
+            if not draw_x or not asx.tick.enable:
                 x_tick_opts.append('ticks: none')
                 x_tick_opts.append('subticks: none')
             else:
@@ -246,13 +259,19 @@ class TypstGenerator:
         if asy:
             if asy.limits:
                 args.append(f'ylim: ({self.__fmt_flt(asy.limits[0])}, {self.__fmt_flt(asy.limits[1])})')
-            if asy.label and is_primary:
+            # FIXED: Check draw_y instead of is_primary so right axes ('r') get their labels!
+            if asy.label and draw_y:
                 args.append(f'ylabel: [{asy.label}]')
             if asy.log:
                 args.append('yscale: "log"')
 
             y_tick_opts = []
-            if not asy.tick.enable:
+            # FIXED: Add explicit position mapping for right axes ('r' / YAxis.RIGHT)
+            if ay in ('r', getattr(YAxis, 'RIGHT', 'r')):
+                y_tick_opts.append('position: right')
+
+            # Suppress ticks if the axis was already drawn by an earlier diagram group
+            if not draw_y or not asy.tick.enable:
                 y_tick_opts.append('ticks: none')
                 y_tick_opts.append('subticks: none')
             else:
@@ -273,35 +292,34 @@ class TypstGenerator:
         # Comprehensive Grid Configuration
         # ==========================================
         prefix_rules = []
-        if is_primary:
-            def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool) -> str:
-                if not axis_setup:
-                    return "none"
-                enabled = axis_setup.grid.major_enable if is_major else axis_setup.grid.minor_enable
-                if not enabled:
-                    return "none"
-                thickness = self.__fmt_thickness(axis_setup.grid.major_thickness if is_major else axis_setup.grid.minor_thickness)
-                color = self.__fmt__color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
-                return f"{thickness} + {color}"
 
-            x_maj = get_grid_stroke(asx, is_major=True)
-            y_maj = get_grid_stroke(asy, is_major=True)
-            x_min = get_grid_stroke(asx, is_major=False)
-            y_min = get_grid_stroke(asy, is_major=False)
+        def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool, enabled: bool) -> str:
+            if not axis_setup or not enabled:
+                return "none"
+            is_enabled = axis_setup.grid.major_enable if is_major else axis_setup.grid.minor_enable
+            if not is_enabled:
+                return "none"
+            thickness = self.__fmt_thickness(axis_setup.grid.major_thickness if is_major else axis_setup.grid.minor_thickness)
+            color = self.__fmt__color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
+            return f"{thickness} + {color}"
 
-            if x_maj == y_maj and x_min == y_min:
-                args.append(f'grid: (stroke: {x_maj}, stroke-sub: {x_min})')
-            else:
-                prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "x"), stroke: {x_maj}, stroke-sub: {x_min})')
-                prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "y"), stroke: {y_maj}, stroke-sub: {y_min})')
+        # Grid lines are governed exclusively by active, non-duplicate drawn axes
+        x_maj = get_grid_stroke(asx, is_major=True, enabled=draw_x)
+        y_maj = get_grid_stroke(asy, is_major=True, enabled=draw_y)
+        x_min = get_grid_stroke(asx, is_major=False, enabled=draw_x)
+        y_min = get_grid_stroke(asy, is_major=False, enabled=draw_y)
+
+        if x_maj == y_maj and x_min == y_min:
+            args.append(f'grid: (stroke: {x_maj}, stroke-sub: {x_min})')
         else:
-            args.append('grid: (stroke: none, stroke-sub: none)')
+            prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "x"), stroke: {x_maj}, stroke-sub: {x_min})')
+            prefix_rules.append(f'#show: lq.cond-set(lq.grid.with(kind: "y"), stroke: {y_maj}, stroke-sub: {y_min})')
 
         # ==========================================
         # Comprehensive Tick Styling
         # ==========================================
-        def get_tick_stroke(axis_setup: Union[AxisSetup, None], is_major: bool) -> str:
-            if not axis_setup or not axis_setup.tick.enable:
+        def get_tick_stroke(axis_setup: Union[AxisSetup, None], is_major: bool, enabled: bool) -> str:
+            if not axis_setup or not axis_setup.tick.enable or not enabled:
                 return "none"
             if not is_major and axis_setup.tick.minor_num <= 0:
                 return "none"
@@ -310,10 +328,10 @@ class TypstGenerator:
             color = self.__fmt__color(ref_tick.major_color if is_major else ref_tick.minor_color)
             return f"{thickness} + {color}"
 
-        x_tick_maj = get_tick_stroke(asx, is_major=True)
-        y_tick_maj = get_tick_stroke(asy, is_major=True)
-        x_tick_min = get_tick_stroke(asx, is_major=False)
-        y_tick_min = get_tick_stroke(asy, is_major=False)
+        x_tick_maj = get_tick_stroke(asx, is_major=True, enabled=draw_x)
+        y_tick_maj = get_tick_stroke(asy, is_major=True, enabled=draw_y)
+        x_tick_min = get_tick_stroke(asx, is_major=False, enabled=draw_x)
+        y_tick_min = get_tick_stroke(asy, is_major=False, enabled=draw_y)
 
         if x_tick_maj == y_tick_maj and x_tick_min == y_tick_min:
             if x_tick_maj != "none":
@@ -381,7 +399,6 @@ class TypstGenerator:
             stroke_val = f'(paint: {color_str}, thickness: {thick_str}, dash: {dash_str})'
             plot_args.append(f'stroke: {stroke_val},')
 
-        # The updated __fmt_marker outputs the interceptor closure directly
         marker_str = self.__fmt_marker(data.ls.marker, data.ls.plot_color)
         plot_args.append(f'{marker_str},')
 

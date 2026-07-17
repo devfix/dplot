@@ -29,12 +29,12 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- classic plot -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_classic_plot.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/classic_plot_latex.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/classic_plot.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot_typst.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_classic_plot.expected.png" width="400"/>
         </a>
       </td>
@@ -68,13 +68,13 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- all axes -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_all_axes.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes_latex.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/all_axes.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">
-          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/test_all_axes.expected.png" width="400"/>
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes_typst.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/all_axes.expected.png" width="400"/>
         </a>
       </td>
     </tr>

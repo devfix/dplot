@@ -4,7 +4,7 @@
 #set page(
   width: auto,
   height: auto,
-  margin: (top: 4.000mm, bottom: 10.000mm, left: 14.000mm, right: 14.000mm),
+  margin: (top: 4.000mm, bottom: 12.000mm, left: 16.000mm, right: 16.000mm),
 )
 
 #block(width: 50.000mm, height: 50.000mm, [
@@ -36,8 +36,6 @@
     )
   ]
   #place(top + left)[
-    #show: lq.cond-set(lq.tick.with(kind: "x", sub: false), stroke: 0.400pt + rgb(0, 0, 0))
-    #show: lq.cond-set(lq.tick.with(kind: "x", sub: true), stroke: 0.400pt + rgb(128, 128, 128))
     #show: lq.cond-set(lq.tick.with(kind: "y", sub: false), stroke: 0.400pt + rgb(0, 0, 0))
     #lq.diagram(
       bounds: "data-area",
@@ -45,9 +43,10 @@
       height: 50.000mm,
       fill: none,
       xlim: (13.5, 16.5),
-      xaxis: (subticks: 1, mirror: (ticks: false)),
+      xaxis: (ticks: none, subticks: none),
       ylim: (-41.73048472, 28.36109376),
-      yaxis: (subticks: none, mirror: (ticks: false)),
+      ylabel: [$angle S$ / $360^degree$],
+      yaxis: (position: right, subticks: none, mirror: (ticks: false)),
       grid: (stroke: none, stroke-sub: none),
       legend: none,
       lq.plot(
