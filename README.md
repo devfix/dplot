@@ -12,6 +12,9 @@ Click on the images to see the code that created them.
 Just ignore the import of `tests.tools` and the `assert` statements.
 
 <br/>
+**Important notice**: The plots are not necessarily intended to look nice and rather just show many
+ features of dplot.
+<br/>
 
 <table style="background-color: white;">
   <thead>
@@ -42,6 +45,18 @@ Just ignore the import of `tests.tools` and the `assert` statements.
       <td align="center">
         <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb_10.expected.png" width="400"/>
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_all_axes.expected.png" width="400"/>
+        </a>
+      </td>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_all_axes.expected.png" width="400"/>
         </a>
       </td>
     </tr>
