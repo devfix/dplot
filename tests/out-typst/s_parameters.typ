@@ -33,6 +33,13 @@
         mark: ((mark, fill: rgb(95, 158, 160), stroke: rgb(95, 158, 160)) => (lq.marks.o)((size: mark.size, stroke: stroke, fill: fill))),
         every: 20,
       ),
+      lq.plot(
+        (),
+        (),
+        label: [$angle S_11$],
+        stroke: (paint: rgb(0, 0, 0), thickness: 1.000pt, dash: "dashed"),
+        mark: ((mark, fill: rgb(0, 0, 0), stroke: rgb(0, 0, 0)) => (lq.marks.s)((size: mark.size, stroke: stroke, fill: none))),
+      ),
     )
   ]
   #place(top + left)[

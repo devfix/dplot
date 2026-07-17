@@ -224,18 +224,15 @@ class TypstGenerator:
         if asx:
             if asx.limits:
                 args.append(f'xlim: ({self.__fmt_flt(asx.limits[0])}, {self.__fmt_flt(asx.limits[1])})')
-            # FIXED: Check draw_x instead of is_primary so new top axes ('t') get their labels
             if asx.label and draw_x:
                 args.append(f'xlabel: [{asx.label}]')
             if asx.log:
                 args.append('xscale: "log"')
 
             x_tick_opts = []
-            # FIXED: Add explicit position mapping for top axes ('t' / XAxis.TOP)
             if ax in ('t', getattr(XAxis, 'TOP', 't')):
                 x_tick_opts.append('position: top')
 
-            # Suppress ticks if the axis was already drawn by an earlier diagram group
             if not draw_x or not asx.tick.enable:
                 x_tick_opts.append('ticks: none')
                 x_tick_opts.append('subticks: none')
@@ -259,18 +256,15 @@ class TypstGenerator:
         if asy:
             if asy.limits:
                 args.append(f'ylim: ({self.__fmt_flt(asy.limits[0])}, {self.__fmt_flt(asy.limits[1])})')
-            # FIXED: Check draw_y instead of is_primary so right axes ('r') get their labels!
             if asy.label and draw_y:
                 args.append(f'ylabel: [{asy.label}]')
             if asy.log:
                 args.append('yscale: "log"')
 
             y_tick_opts = []
-            # FIXED: Add explicit position mapping for right axes ('r' / YAxis.RIGHT)
             if ay in ('r', getattr(YAxis, 'RIGHT', 'r')):
                 y_tick_opts.append('position: right')
 
-            # Suppress ticks if the axis was already drawn by an earlier diagram group
             if not draw_y or not asy.tick.enable:
                 y_tick_opts.append('ticks: none')
                 y_tick_opts.append('subticks: none')
@@ -303,7 +297,6 @@ class TypstGenerator:
             color = self.__fmt__color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
             return f"{thickness} + {color}"
 
-        # Grid lines are governed exclusively by active, non-duplicate drawn axes
         x_maj = get_grid_stroke(asx, is_major=True, enabled=draw_x)
         y_maj = get_grid_stroke(asy, is_major=True, enabled=draw_y)
         x_min = get_grid_stroke(asx, is_major=False, enabled=draw_x)
@@ -365,22 +358,33 @@ class TypstGenerator:
         for arg in args:
             out.append(f'  {arg},')
 
+        # ==========================================
+        # FIXED: Inject Dummy Handles for Legends
+        # ==========================================
         for data in self.fig.plot_data:
             if data.ax == ax and data.ay == ay:
-                out += self.__create_plot_call(data, asx, asy)
+                # Normal plot rendering for series belonging to this axis group
+                out += self.__create_plot_call(data, asx, asy, is_dummy=False)
+            elif is_primary and data.label:
+                # Inject empty dummy plots into the primary diagram to generate unified legend entries!
+                out += self.__create_plot_call(data, asx, asy, is_dummy=True)
 
         out.append(')')
         return out
 
-    def __create_plot_call(self, data: Data, asx: Union[AxisSetup, None], asy: Union[AxisSetup, None]) -> list[str]:
+    def __create_plot_call(self, data: Data, asx: Union[AxisSetup, None], asy: Union[AxisSetup, None], is_dummy: bool = False) -> list[str]:
         """Translates data arrays and LineSetup into lq.plot() calls, applying axis scaling."""
-        scale_x = asx.scale if asx else 1.0
-        scale_y = asy.scale if asy else 1.0
-        scaled_dx = [x * scale_x for x in data.dx]
-        scaled_dy = [y * scale_y for y in data.dy]
-
-        xs_str = self.__fmt_array(scaled_dx)
-        ys_str = self.__fmt_array(scaled_dy)
+        if is_dummy:
+            # Empty coordinate arrays draw nothing on the canvas while preserving legend registration
+            xs_str = "()"
+            ys_str = "()"
+        else:
+            scale_x = asx.scale if asx else 1.0
+            scale_y = asy.scale if asy else 1.0
+            scaled_dx = [x * scale_x for x in data.dx]
+            scaled_dy = [y * scale_y for y in data.dy]
+            xs_str = self.__fmt_array(scaled_dx)
+            ys_str = self.__fmt_array(scaled_dy)
 
         plot_args = [
             f'{xs_str},',
@@ -402,7 +406,8 @@ class TypstGenerator:
         marker_str = self.__fmt_marker(data.ls.marker, data.ls.plot_color)
         plot_args.append(f'{marker_str},')
 
-        if data.ls.marker != Marker.NONE and data.ls.marker_repeat > 1:
+        # Omit step intervals on dummy plots to prevent step evaluations on empty arrays
+        if not is_dummy and data.ls.marker != Marker.NONE and data.ls.marker_repeat > 1:
             plot_args.append(f'every: {data.ls.marker_repeat},')
 
         lines = ['  lq.plot(']
