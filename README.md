@@ -7,9 +7,28 @@ The aim is merely to provide convenient functions for the most common cases of p
 
 ## Example plots
 
-| **Latex Generated** | **Typst Generated** |
-|:---:|:---:|
-| <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" width="400"/></a> | <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py"><img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" alt="drawing" width="400"/></a> |
+<table style="background-color: white;">
+  <thead>
+    <tr>
+      <th align="center"><strong>Latex Generated</strong></th>
+      <th align="center"><strong>Typst Generated</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" width="400"/>
+        </a>
+      </td>
+      <td align="center">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb.py">
+          <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/test_crlb.expected.png" width="400"/>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 
 ## Installation in a local venv
