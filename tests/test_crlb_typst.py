@@ -36,8 +36,8 @@ def test_crlb_typst():
     ts = TickSetup(enable=True)
 
     # since we use the typst output, we use typst inline math commands
-    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=2)
-    fig.axes['l'] = AxisSetup(r'$"CRLB" thick \/ thick (sigma^2 \/ A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
+    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=0)
+    fig.axes['l'] = AxisSetup(r'$"CRLB" thick \/ thick (sigma^2 \/ A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=0, grid=GridSetup(major_enable=True, minor_enable=True))
     fig.axes['r'] = AxisSetup('')
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
     fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))

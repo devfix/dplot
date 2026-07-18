@@ -23,7 +23,7 @@
       xlabel: [$f$ / $"GHz"$],
       xaxis: (subticks: 1, mirror: (ticks: false)),
       ylim: (-0.6960083621, 6.595405017),
-      ylabel: [$abs(S) dot 10^2$],
+      ylabel: lq.label(kind: "y", pad: 0.75em + 2mm)[$abs(S) dot 10^2$],
       yaxis: (subticks: none, mirror: (ticks: false)),
       legend: (position: bottom),
       lq.plot(

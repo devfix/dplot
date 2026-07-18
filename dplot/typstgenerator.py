@@ -138,6 +138,14 @@ class TypstGenerator:
 
         return f'mark: ((mark, fill: {col_str}, stroke: {col_str}) => ({mark_func})((size: mark.size, stroke: stroke, fill: {inner_fill})))'
 
+    def __fmt_axis_label(self, label: str, kind: str, shift: Union[float, None]) -> str:
+        """Formats an axis label, applying a padding shift in millimeters if specified."""
+        if not shift or shift == 0:
+            return f'[{label}]'
+        sign = "+" if shift > 0 else "-"
+        shift_str = f'0.75em {sign} {self.__fmt_flt(abs(shift))}mm'
+        return f'lq.label(kind: "{kind}", pad: {shift_str})[{label}]'
+
     # ==========================================
     # Document Construction
     # ==========================================
@@ -225,7 +233,9 @@ class TypstGenerator:
             if asx.limits:
                 args.append(f'xlim: ({self.__fmt_flt(asx.limits[0])}, {self.__fmt_flt(asx.limits[1])})')
             if asx.label and draw_x:
-                args.append(f'xlabel: [{asx.label}]')
+                # FIXED: Apply label_shift via lq.label padding
+                label_val = self.__fmt_axis_label(asx.label, "x", getattr(asx, 'label_shift', None))
+                args.append(f'xlabel: {label_val}')
             if asx.log:
                 args.append('xscale: "log"')
 
@@ -257,7 +267,9 @@ class TypstGenerator:
             if asy.limits:
                 args.append(f'ylim: ({self.__fmt_flt(asy.limits[0])}, {self.__fmt_flt(asy.limits[1])})')
             if asy.label and draw_y:
-                args.append(f'ylabel: [{asy.label}]')
+                # FIXED: Apply label_shift via lq.label padding
+                label_val = self.__fmt_axis_label(asy.label, "y", getattr(asy, 'label_shift', None))
+                args.append(f'ylabel: {label_val}')
             if asy.log:
                 args.append('yscale: "log"')
 

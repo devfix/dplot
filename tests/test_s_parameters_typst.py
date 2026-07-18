@@ -17,10 +17,10 @@ def test_s_parameters():
     fig = Figure(fig_name, margin={'t': 4, 'b': 12, 'l': 16, 'r': 16}, legend_setup=LegendSetup(enable=True, v_align=VAlign.BOTTOM, h_align=HAlign.CENTER))
 
     # since we use the typst output, we use typst inline math commands
-    fig.axes['b'] = AxisSetup(r'$f$ / $"GHz"$', label_shift=1.5,
+    fig.axes['b'] = AxisSetup(r'$f$ / $"GHz"$', label_shift=0,
                               tick=TickSetup(minor_num=1), grid=GridSetup(major_enable=True, minor_enable=True, minor_color=Color.LIGHTGRAY))
-    fig.axes['l'] = AxisSetup(r'$abs(S) dot 10^2$', label_shift=1)
-    fig.axes['r'] = AxisSetup(r'$angle S$ / $360^degree$', label_shift=5)
+    fig.axes['l'] = AxisSetup(r'$abs(S) dot 10^2$', label_shift=2)
+    fig.axes['r'] = AxisSetup(r'$angle S$ / $360^degree$', label_shift=0)
 
     fig.add('b', 'l', freqs_ghz, 10 ** 2 * 20 * np.log10(np.abs(s11)), label=r'$abs(S_11)$', ls=LineSetup(plot_color=Color.CADETBLUE, marker=Marker.DOT, marker_repeat=20))
     fig.add('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi, ls=LineSetup(line_style=LineStyle.DASHED, marker=Marker.SQUARE, marker_repeat=20),

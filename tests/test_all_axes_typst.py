@@ -9,15 +9,15 @@ def test_all_axes():
         'bottom', scale=1,
         tick=TickSetup(enable=True, minor_thickness=Thickness.VERY_THIN, major_thickness=Thickness.VERY_THICK, minor_color=Color.LIGHTGRAY, minor_num=4),
         grid=GridSetup(major_enable=True, major_thickness=Thickness.VERY_THICK, minor_enable=True, minor_color=Color.LIGHTGRAY, minor_thickness=Thickness.THIN),
-        label_shift=2
+        label_shift=-1
     )
-    fig.axes['l'] = AxisSetup('left', log=True, tick=TickSetup(enable=True), label_shift=7)
-    fig.axes['r'] = AxisSetup('right', tick=TickSetup(enable=True), label_shift=4)
+    fig.axes['l'] = AxisSetup('left', log=True, tick=TickSetup(enable=True), label_shift=0)
+    fig.axes['r'] = AxisSetup('right', tick=TickSetup(enable=True), label_shift=0)
     fig.axes['t'] = AxisSetup(
         'top', scale=1,
         tick=TickSetup(enable=True, minor_thickness=Thickness.THIN, major_thickness=Thickness.THICK, minor_num=1),
         grid=GridSetup(major_enable=False),
-        label_shift=2
+        label_shift=-1
     )
 
     fig.add('b', 'l', [0, 1, 2, 3, 4, 5], [4, 5, 4, 5, 4, 5], ls=LineSetup(plot_color=Color.RED))
