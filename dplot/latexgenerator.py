@@ -5,8 +5,10 @@ import sys
 import tempfile
 from itertools import chain
 from typing import cast, get_args
-from .color import _resolve_color
+
 from .common import *
+from .legend import LegendPosition
+from .color import _resolve_color
 from .figure import Figure
 
 LatexCmdsDocClass = [r'\documentclass[class=IEEEtran]{standalone}']
@@ -306,17 +308,54 @@ class LatexGenerator:
         return out
 
     def __create_legend(self) -> list[str]:
+        # If the legend is explicitly disabled, skip rendering the overlay completely
+        if not self.fig.legend_setup.enable:
+            return []
+
         out = ['']
         out += ['%%%%%%%%%%']
         out += ['% legend %']
         out += ['%%%%%%%%%%']
+
+        # 1. Translate abstract alignment fields into a PGFPlots anchor corner string
+        # e.g., VAlign.TOP + HAlign.RIGHT -> 'north east'
+        v_map = {VAlign.TOP: "north", VAlign.CENTER: "center", VAlign.BOTTOM: "south"}
+        h_map = {HAlign.LEFT: "west", HAlign.CENTER: "", HAlign.RIGHT: "east"}
+
+        anchor_str = f"{v_map[self.fig.legend_setup.v_align]} {h_map[self.fig.legend_setup.h_align]}".strip()
+        if anchor_str == "center":
+            anchor_str = "center"
+
+        # 2. Resolve 'at' coordinates based on explicit overrides or semantic modes
+        if self.fig.legend_setup.coordinates is not None:
+            x, y = self.fig.legend_setup.coordinates
+        else:
+            # Synthesize positioning multipliers based on layout constraints
+            if self.fig.legend_setup.position_mode == LegendPosition.INSIDE:
+                x = 0.98 if self.fig.legend_setup.h_align == HAlign.RIGHT else (0.02 if self.fig.legend_setup.h_align == HAlign.LEFT else 0.5)
+                y = 0.98 if self.fig.legend_setup.v_align == VAlign.TOP else (0.02 if self.fig.legend_setup.v_align == VAlign.BOTTOM else 0.5)
+            else:
+                # Shift anchor point safely outside data/axis description frames
+                x = 1.05 if self.fig.legend_setup.h_align == HAlign.RIGHT else (-0.05 if self.fig.legend_setup.h_align == HAlign.LEFT else 0.5)
+                y = 1.05 if self.fig.legend_setup.v_align == VAlign.TOP else (-0.05 if self.fig.legend_setup.v_align == VAlign.BOTTOM else 0.5)
+
         legend_style = [
-            f'at={{({self.__fmt_flt(self.fig.legend_setup.at[0])},{self.__fmt_flt(self.fig.legend_setup.at[1])})}}',
-            f'anchor={self.fig.legend_setup.anchor}',
-            f'legend cell align={self.fig.legend_setup.cell_align}',
-            f'align={self.fig.legend_setup.align}',
-            f'nodes={{scale={self.__fmt_flt(self.fig.legend_setup.scale)}, transform shape}}'
+            f'at={{({self.__fmt_flt(x)},{self.__fmt_flt(y)})}}',
+            f'anchor={anchor_str}',
+            # Default behavior translations from backend setup defaults
+            'legend cell align=left',
+            'align=left',
         ]
+
+        # Translate the absolute font size to a standard TikZ point scale mapping
+        # (Assuming base text size is around 10pt, size / 10 yields a clean scale factor)
+        font_scale = self.fig.legend_setup.font_size_pt / 10.0
+        legend_style.append(f'nodes={{scale={self.__fmt_flt(font_scale)}, transform shape}}')
+
+        # Inject the legend box header title if defined in the setup properties
+        if self.fig.legend_setup.title:
+            legend_style.append(f'legend title={{{self.fig.legend_setup.title}}}')
+
         params = self.__get_axis_param('x', None, limits=(0, 1))
         params += [
             f'ymin=0',
@@ -327,15 +366,18 @@ class LatexGenerator:
             r'axis on top=true',
             r'legend style={' + ', '.join(legend_style) + r'}'
         ]
+
         out += [
             r'\begin{axis}',
             r'['
         ]
         out += [f'  {p},' for p in params]
         out += [r']']
+
         for data in self.fig.plot_data:
             label = data.label if len(data.label) > 0 else str(data._id)
             out.append(r'\addlegendimage{/pgfplots/refstyle=dplot:' + str(data._id) + r'}\addlegendentry{' + label + r'}')
+
         out += [r'\end{axis}']
         return out
 

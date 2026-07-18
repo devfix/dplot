@@ -5,6 +5,7 @@ import sys
 from typing import cast, get_args
 import numpy as np
 from .common import *
+from .legend import LegendSetup
 
 
 # noinspection PyShadowingNames,PyMethodMayBeStatic,PyProtectedMember

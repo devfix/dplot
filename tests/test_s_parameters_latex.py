@@ -14,7 +14,7 @@ def test_s_parameters():
     freqs_ghz = df['S(1,1) (GHz) Via Frequency'].to_numpy()
     s11 = df['S(1,1) Via Unitless data (Real)'].to_numpy() + 1j * df['S(1,1) Via Unitless data (Imag)'].to_numpy()
 
-    fig = Figure(fig_name, margin={'t': 4, 'b': 12, 'l': 16, 'r': 16}, legend_setup=LegendSetup(anchor='south east', at=(0.6, 0.02)))
+    fig = Figure(fig_name, margin={'t': 4, 'b': 12, 'l': 16, 'r': 16}, legend_setup=LegendSetup(enable=True, v_align=VAlign.BOTTOM, h_align=HAlign.CENTER))
 
     # since we use the latex output, we use typst inline latex commands
     fig.axes['b'] = AxisSetup(r'$f$ / $\si{\giga\hertz}$', label_shift=1.5,

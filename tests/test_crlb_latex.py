@@ -32,7 +32,7 @@ def test_crlb():
     y_max = 10 ** np.ceil(np.log10(crlb_max))
     # print(f'{title}: y_min={y_min}, y_max={y_max} crlb_approx={crlb_approx}')
 
-    fig = Figure(fig_name, margin={'t': 8, 'b': 12, 'l': 14, 'r': 14}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True))
+    fig = Figure(fig_name, margin={'t': 8, 'b': 12, 'l': 14, 'r': 14}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True, h_align=HAlign.CENTER))
     ts = TickSetup(enable=True)
 
     # since we use the latex output, we use tex inline math commands

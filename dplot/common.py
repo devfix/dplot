@@ -7,6 +7,18 @@ from .color import Color, AnyColor
 # https://tikz.dev/pgfplots/reference-markers
 
 
+class HAlign(Enum):
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+
+
+class VAlign(Enum):
+    TOP = "top"
+    CENTER = "center"
+    BOTTOM = "bottom"
+
+
 class Thickness(Enum):
     ULTRA_THIN = 0.1
     VERY_THIN = 0.2
@@ -98,33 +110,6 @@ class TickSetup:
         self.minor_thickness = minor_thickness
         self.minor_color = minor_color
         self.minor_num = minor_num
-
-
-class LegendSetup:
-    def __init__(
-            self,
-            enable: bool = True,
-            anchor: str = 'north east',
-            align: str = 'left',
-            cell_align: str = 'left',
-            at: tuple[float, float] = (0.98, 0.98),
-            scale: float = 0.8
-    ):
-        """
-        Create new legend setup.
-        :param enable: show / hide legend
-        :param anchor: based on which corner of the legend it gets positioned
-        :param align:
-        :param cell_align:
-        :param at: position of legend anchor, x and y value in range 0...1
-        :param scale: legend scale (size)
-        """
-        self.enable = enable
-        self.anchor = anchor
-        self.align = align
-        self.cell_align = cell_align
-        self.at = at
-        self.scale = scale
 
 
 class AxisSetup:
