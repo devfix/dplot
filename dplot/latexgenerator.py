@@ -251,7 +251,7 @@ class LatexGenerator:
             f'line width={data.ls.line_width}',
             f'mark={self.__fmt_marker(data.ls.marker)}',
             f'mark repeat={data.ls.marker_repeat}',
-            f'mark phase={data.ls.marker_phase}',
+            f'mark phase={data.ls.marker_phase + 1}',
             f'mark options={{solid}}',  # prevent dashed markers etc.
         ]
         if data.ls.line_style == LineStyle.NONE:

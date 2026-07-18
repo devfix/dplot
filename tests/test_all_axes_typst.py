@@ -23,7 +23,7 @@ def test_all_axes():
     fig.add('b', 'l', [0, 1, 2, 3, 4, 5], [4, 5, 4, 5, 4, 5], ls=LineSetup(plot_color=Color.RED))
     fig.add('b', 'r', [0, 1, 2, 3, 4, 5], [1, 1, 2, 1, 1, 1], ls=LineSetup(plot_color=Color.LIMEGREEN, line_style=LineStyle.DOTTED, line_width=2))
     fig.add('t', 'l', [-2, -1, 0], [4, 6, 4],
-            ls=LineSetup(plot_color=Color.BLUEVIOLET, line_style=LineStyle.SOLID, marker=Marker.SQUARE, marker_repeat=2, marker_phase=2))
+            ls=LineSetup(plot_color=Color.BLUEVIOLET, line_style=LineStyle.SOLID, marker=Marker.SQUARE, marker_repeat=2, marker_phase=1))
     fig.add('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color=Color.ROSYBROWN, line_width=0.5))
 
     path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst

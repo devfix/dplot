@@ -78,7 +78,7 @@
         (4, 6, 4),
         stroke: (paint: rgb(138, 43, 226), thickness: 1.000pt, dash: "solid"),
         mark: ((mark, fill: rgb(138, 43, 226), stroke: rgb(138, 43, 226)) => (lq.marks.s)((size: mark.size, stroke: stroke, fill: none))),
-        every: 2,
+        every: range(1, 3, step: 2),
       ),
     )
   ]

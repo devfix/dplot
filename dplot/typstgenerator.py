@@ -465,8 +465,17 @@ class TypstGenerator:
         plot_args.append(f'{marker_str},')
 
         # Omit step intervals on dummy plots to prevent step evaluations on empty arrays
-        if not is_dummy and data.ls.marker != Marker.NONE and data.ls.marker_repeat > 1:
-            plot_args.append(f'every: {data.ls.marker_repeat},')
+        if not is_dummy and data.ls.marker != Marker.NONE:
+            repeat = getattr(data.ls, 'marker_repeat', 1)
+            phase = getattr(data.ls, 'marker_phase', 0)
+            total_len = len(data.dx)
+
+            if phase > 0:
+                # Custom phase + stride using a native Typst range constructor
+                plot_args.append(f'every: range({phase}, {total_len}, step: {repeat}),')
+            elif repeat > 1:
+                # Flat integer fallback for pure step stride beginning at index 0
+                plot_args.append(f'every: {repeat},')
 
         lines = ['  lq.plot(']
         for pa in plot_args:
