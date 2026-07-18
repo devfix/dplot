@@ -341,16 +341,51 @@ class TypstGenerator:
             if y_tick_min != "none":
                 prefix_rules.append(f'#show: lq.cond-set(lq.tick.with(kind: "y", sub: true), stroke: {y_tick_min})')
 
-        # Legend configuration
+        # ==========================================
+        # Comprehensive Legend Configuration
+        # ==========================================
         if is_primary and self.fig.legend_setup.enable:
-            anchor_map = {
-                'north east': 'top + right',
-                'north west': 'top + left',
-                'south east': 'bottom + right',
-                'south west': 'bottom + left',
-            }
-            pos = anchor_map.get(self.fig.legend_setup.anchor, 'top + right')
-            args.append(f'legend: (position: {pos})')
+            # Apply font size styling to the legend element via a selector show rule
+            font_size_str = self.__fmt_flt(self.fig.legend_setup.font_size_pt)
+            prefix_rules.append(f'#show lq.selector(lq.legend): set text(size: {font_size_str}pt)')
+
+            legend_opts = []
+
+            # 1. Resolve Layout Positioning
+            if self.fig.legend_setup.coordinates is not None:
+                x, y = self.fig.legend_setup.coordinates
+                pos_str = f"({self.__fmt_flt(x * 100)}%, {self.__fmt_flt(y * 100)}%)"
+            else:
+                # Support both enum properties (.value/.name) and raw string fallbacks
+                h_str = getattr(self.fig.legend_setup.h_align, 'value', str(self.fig.legend_setup.h_align))
+                v_str = getattr(self.fig.legend_setup.v_align, 'value', str(self.fig.legend_setup.v_align))
+                pos_mode = getattr(self.fig.legend_setup.position_mode, 'name', str(self.fig.legend_setup.position_mode))
+
+                if 'INSIDE' in pos_mode:
+                    if h_str == "center" and v_str == "center":
+                        pos_str = "center"
+                    elif h_str == "center":
+                        pos_str = v_str
+                    elif v_str == "center":
+                        pos_str = h_str
+                    else:
+                        pos_str = f"{v_str} + {h_str}"
+                else:
+                    # OUTSIDE positioning: Push boundaries outside data area using em offsets
+                    if h_str == "right":
+                        pos_str = f"(100% + 0.5em, {v_str})"
+                    elif h_str == "left":
+                        pos_str = f"(0% - 4.5em, {v_str})"
+                    else:
+                        pos_str = f"({h_str}, 100% + 0.5em)"
+
+            legend_opts.append(f'position: {pos_str}')
+
+            # 2. Resolve Optional Title
+            if self.fig.legend_setup.title:
+                legend_opts.append(f'title: [{self.fig.legend_setup.title}]')
+
+            args.append(f'legend: ({", ".join(legend_opts)})')
         else:
             args.append('legend: none')
 
@@ -359,14 +394,14 @@ class TypstGenerator:
             out.append(f'  {arg},')
 
         # ==========================================
-        # FIXED: Inject Dummy Handles for Legends
+        # Inject Dummy Handles for Legends
         # ==========================================
         for data in self.fig.plot_data:
             if data.ax == ax and data.ay == ay:
                 # Normal plot rendering for series belonging to this axis group
                 out += self.__create_plot_call(data, asx, asy, is_dummy=False)
             elif is_primary and data.label:
-                # Inject empty dummy plots into the primary diagram to generate unified legend entries!
+                # Inject empty dummy plots into the primary diagram to generate unified legend entries
                 out += self.__create_plot_call(data, asx, asy, is_dummy=True)
 
         out.append(')')
