@@ -13,7 +13,6 @@ The following table shows a comparision of the LaTex and Typst output.
 Click on the images to see the code that created them.  
 Just ignore the import of `tests.tools` and the `assert` statements.
 
-<br/>
 **Important notice**: The plots are not necessarily intended to look nice and rather just show many
  features of dplot. You can customize it to your favor :)
 <br/>

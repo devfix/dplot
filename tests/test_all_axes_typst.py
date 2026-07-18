@@ -1,11 +1,10 @@
-import inspect
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST
 from dplot import *
 
 
 def test_all_axes():
-    title = inspect.stack()[0][3]
-    fig = Figure(title, margin={'t': 10, 'b': 10, 'l': 10, 'r': 10}, legend_setup=LegendSetup(enable=False))
+    fig_name = 'all_axes'
+    fig = Figure(fig_name, margin={'t': 10, 'b': 10, 'l': 15, 'r': 15}, legend_setup=LegendSetup(enable=False))
     fig.axes['b'] = AxisSetup(
         'bottom', scale=1,
         tick=TickSetup(enable=True, minor_thickness=Thickness.VERY_THIN, major_thickness=Thickness.VERY_THICK, minor_color=Color.LIGHTGRAY, minor_num=4),
@@ -27,5 +26,5 @@ def test_all_axes():
             ls=LineSetup(plot_color=Color.BLUEVIOLET, line_style=LineStyle.SOLID, marker=Marker.SQUARE, marker_repeat=2, marker_phase=2))
     fig.add('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color=Color.ROSYBROWN, line_width=0.5))
 
-    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
-    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
+    path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
+    assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected

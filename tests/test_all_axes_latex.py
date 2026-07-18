@@ -1,0 +1,30 @@
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
+from dplot import *
+
+
+def test_all_axes():
+    fig_name = 'all_axes'
+    fig = Figure(fig_name, margin={'t': 10, 'b': 10, 'l': 15, 'r': 15}, legend_setup=LegendSetup(enable=False))
+    fig.axes['b'] = AxisSetup(
+        'bottom', scale=1,
+        tick=TickSetup(enable=True, minor_thickness=Thickness.VERY_THIN, major_thickness=Thickness.VERY_THICK, minor_color=Color.LIGHTGRAY, minor_num=4),
+        grid=GridSetup(major_enable=True, major_thickness=Thickness.VERY_THICK, minor_enable=True, minor_color=Color.LIGHTGRAY, minor_thickness=Thickness.THIN),
+        label_shift=2
+    )
+    fig.axes['l'] = AxisSetup('left', log=True, tick=TickSetup(enable=True), label_shift=7)
+    fig.axes['r'] = AxisSetup('right', tick=TickSetup(enable=True), label_shift=4)
+    fig.axes['t'] = AxisSetup(
+        'top', scale=1,
+        tick=TickSetup(enable=True, minor_thickness=Thickness.THIN, major_thickness=Thickness.THICK, minor_num=1),
+        grid=GridSetup(major_enable=False),
+        label_shift=2
+    )
+
+    fig.add('b', 'l', [0, 1, 2, 3, 4, 5], [4, 5, 4, 5, 4, 5], ls=LineSetup(plot_color=Color.RED))
+    fig.add('b', 'r', [0, 1, 2, 3, 4, 5], [1, 1, 2, 1, 1, 1], ls=LineSetup(plot_color=Color.LIMEGREEN, line_style=LineStyle.DOTTED, line_width=2))
+    fig.add('t', 'l', [-2, -1, 0], [4, 6, 4],
+            ls=LineSetup(plot_color=Color.BLUEVIOLET, line_style=LineStyle.SOLID, marker=Marker.SQUARE, marker_repeat=2, marker_phase=2))
+    fig.add('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color=Color.ROSYBROWN, line_width=0.5))
+
+    path_latex, path_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
+    assert check_identical_pdf(path_pdf)  # check that pdf looks as expected
