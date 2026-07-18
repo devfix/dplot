@@ -9,14 +9,23 @@ from .figure import Figure
 
 
 class TypstGenerator:
-    def __init__(self, fig: Figure):
+    def __init__(self, fig: Figure, standalone: bool = True):
         self.fig = fig
+        self.standalone = standalone
 
     def get_typst_code(self) -> list[str]:
         """Generates the complete Typst document string using Lilaq."""
         self.fig.validate()
-        out = self.__create_doc_begin()
+        if self.standalone:
+            out = self.__create_doc_begin_standalone()
+        else:
+            out = self.__create_doc_begin_include()
         out += self.__create_diagram_groups()
+        if not self.standalone:
+            out += [
+                '',
+                ']'
+            ]
         return out
 
     def export(self, path_output_dir: str, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
@@ -150,8 +159,8 @@ class TypstGenerator:
     # Document Construction
     # ==========================================
 
-    def __create_doc_begin(self) -> list[str]:
-        """Sets up page dimensions, margins around the data-area, and imports Lilaq."""
+    def __create_doc_begin_standalone(self) -> list[str]:
+        """Sets up page dimensions, margins around the data-area, and imports Lilaq for standalone Typst."""
         m = self.fig.margin
         out = [
             '// auto-generated using dplot (TypstGenerator - Lilaq)',
@@ -162,6 +171,24 @@ class TypstGenerator:
             '  height: auto,',
             f'  margin: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
             ')',
+            ''
+        ]
+        return out
+
+    def __create_doc_begin_include(self) -> list[str]:
+        """Sets up a `#block(...)` wrapper and imports Lilaq for Typst inclusion (non-standalone output)."""
+        m = self.fig.margin
+        w = self.fig.width
+        h = self.fig.height
+        out = [
+            '// auto-generated using dplot (TypstGenerator - Lilaq)',
+            '#import "@preview/lilaq:0.6.0" as lq',
+            '',
+            '#block(',
+            f'  width: {(m["l"]+m["r"]+w):.3f}mm,',
+            f'  height: {(m["t"]+m["b"]+h):.3f}mm,',
+            f'  inset: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
+            ')[',
             ''
         ]
         return out
