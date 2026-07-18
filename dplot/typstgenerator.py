@@ -233,7 +233,6 @@ class TypstGenerator:
             if asx.limits:
                 args.append(f'xlim: ({self.__fmt_flt(asx.limits[0])}, {self.__fmt_flt(asx.limits[1])})')
             if asx.label and draw_x:
-                # FIXED: Apply label_shift via lq.label padding
                 label_val = self.__fmt_axis_label(asx.label, "x", getattr(asx, 'label_shift', None))
                 args.append(f'xlabel: {label_val}')
             if asx.log:
@@ -242,6 +241,10 @@ class TypstGenerator:
             x_tick_opts = []
             if ax in ('t', getattr(XAxis, 'TOP', 't')):
                 x_tick_opts.append('position: top')
+
+            # FIXED: Hide the X spine on overlay diagrams if the X axis was already drawn
+            if not draw_x:
+                x_tick_opts.append('stroke: none')
 
             if not draw_x or not asx.tick.enable:
                 x_tick_opts.append('ticks: none')
@@ -267,7 +270,6 @@ class TypstGenerator:
             if asy.limits:
                 args.append(f'ylim: ({self.__fmt_flt(asy.limits[0])}, {self.__fmt_flt(asy.limits[1])})')
             if asy.label and draw_y:
-                # FIXED: Apply label_shift via lq.label padding
                 label_val = self.__fmt_axis_label(asy.label, "y", getattr(asy, 'label_shift', None))
                 args.append(f'ylabel: {label_val}')
             if asy.log:
@@ -276,6 +278,10 @@ class TypstGenerator:
             y_tick_opts = []
             if ay in ('r', getattr(YAxis, 'RIGHT', 'r')):
                 y_tick_opts.append('position: right')
+
+            # FIXED: Hide the Y spine on overlay diagrams if the Y axis was already drawn
+            if not draw_y:
+                y_tick_opts.append('stroke: none')
 
             if not draw_y or not asy.tick.enable:
                 y_tick_opts.append('ticks: none')
@@ -298,6 +304,11 @@ class TypstGenerator:
         # Comprehensive Grid Configuration
         # ==========================================
         prefix_rules = []
+
+        # FIXED: Apply basic_thickness to the outer spines (bounding borders) of the diagram
+        if is_primary and getattr(self.fig, 'basic_thickness', None) is not None:
+            thick_str = self.__fmt_thickness(self.fig.basic_thickness)
+            prefix_rules.append(f'#show: lq.cond-set(lq.spine, stroke: {thick_str} + rgb(0, 0, 0))')
 
         def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool, enabled: bool) -> str:
             if not axis_setup or not enabled:

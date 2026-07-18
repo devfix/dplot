@@ -9,6 +9,7 @@
 
 #block(width: 50.000mm, height: 50.000mm, [
   #place(top + left)[
+    #show: lq.cond-set(lq.spine, stroke: 0.800pt + rgb(0, 0, 0))
     #show: lq.cond-set(lq.grid.with(kind: "x"), stroke: 1.200pt + rgb(0, 0, 0), stroke-sub: 0.400pt + rgb(211, 211, 211))
     #show: lq.cond-set(lq.grid.with(kind: "y"), stroke: none, stroke-sub: none)
     #show: lq.cond-set(lq.tick.with(kind: "x", sub: false), stroke: 1.200pt + rgb(0, 0, 0))
@@ -42,7 +43,7 @@
       height: 50.000mm,
       fill: none,
       xlim: (0, 5),
-      xaxis: (ticks: none, subticks: none),
+      xaxis: (stroke: none, ticks: none, subticks: none),
       ylim: (0, 2),
       ylabel: [right],
       yaxis: (position: right, subticks: none, mirror: (ticks: false)),
@@ -69,7 +70,7 @@
       xaxis: (position: top, subticks: 1, mirror: (ticks: false)),
       ylim: (4, 6),
       yscale: "log",
-      yaxis: (ticks: none, subticks: none),
+      yaxis: (stroke: none, ticks: none, subticks: none),
       grid: (stroke: none, stroke-sub: none),
       legend: none,
       lq.plot(
@@ -88,9 +89,9 @@
       height: 50.000mm,
       fill: none,
       xlim: (-2, 0),
-      xaxis: (position: top, ticks: none, subticks: none),
+      xaxis: (position: top, stroke: none, ticks: none, subticks: none),
       ylim: (0, 2),
-      yaxis: (position: right, ticks: none, subticks: none),
+      yaxis: (position: right, stroke: none, ticks: none, subticks: none),
       grid: (stroke: none, stroke-sub: none),
       legend: none,
       lq.plot(

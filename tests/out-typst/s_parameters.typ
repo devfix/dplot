@@ -9,6 +9,7 @@
 
 #block(width: 50.000mm, height: 50.000mm, [
   #place(top + left)[
+    #show: lq.cond-set(lq.spine, stroke: 0.800pt + rgb(0, 0, 0))
     #show: lq.cond-set(lq.grid.with(kind: "x"), stroke: 0.400pt + rgb(0, 0, 0), stroke-sub: 0.200pt + rgb(211, 211, 211))
     #show: lq.cond-set(lq.grid.with(kind: "y"), stroke: none, stroke-sub: none)
     #show: lq.cond-set(lq.tick.with(kind: "x", sub: false), stroke: 0.400pt + rgb(0, 0, 0))
@@ -51,7 +52,7 @@
       height: 50.000mm,
       fill: none,
       xlim: (13.5, 16.5),
-      xaxis: (ticks: none, subticks: none),
+      xaxis: (stroke: none, ticks: none, subticks: none),
       ylim: (-41.73048472, 28.36109376),
       ylabel: [$angle S$ / $360^degree$],
       yaxis: (position: right, subticks: none, mirror: (ticks: false)),
