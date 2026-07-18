@@ -176,7 +176,7 @@ class TypstGenerator:
         return out
 
     def __create_doc_begin_in(self) -> list[str]:
-        """Sets up page dimensions, margins around the data-area, and imports Lilaq for standalone Typst."""
+"""Sets up a `#block(...)` wrapper and imports Lilaq for Typst inclusion (non-standalone output)."""
         m = self.fig.margin
         w = self.fig.width
         h = self.fig.height
