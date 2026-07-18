@@ -17,9 +17,9 @@ class TypstGenerator:
         """Generates the complete Typst document string using Lilaq."""
         self.fig.validate()
         if self.standalone:
-            out = self.__create_doc_begin_so()
+            out = self.__create_doc_begin_standalone()
         else:
-            out = self.__create_doc_begin_in()
+            out = self.__create_doc_begin_include()
         out += self.__create_diagram_groups()
         if not self.standalone:
             out += [
@@ -159,7 +159,7 @@ class TypstGenerator:
     # Document Construction
     # ==========================================
 
-    def __create_doc_begin_so(self) -> list[str]:
+    def __create_doc_begin_standalone(self) -> list[str]:
         """Sets up page dimensions, margins around the data-area, and imports Lilaq for standalone Typst."""
         m = self.fig.margin
         out = [
@@ -175,8 +175,8 @@ class TypstGenerator:
         ]
         return out
 
-    def __create_doc_begin_in(self) -> list[str]:
-"""Sets up a `#block(...)` wrapper and imports Lilaq for Typst inclusion (non-standalone output)."""
+    def __create_doc_begin_include(self) -> list[str]:
+        """Sets up a `#block(...)` wrapper and imports Lilaq for Typst inclusion (non-standalone output)."""
         m = self.fig.margin
         w = self.fig.width
         h = self.fig.height
