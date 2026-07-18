@@ -4,7 +4,7 @@
 #set page(
   width: auto,
   height: auto,
-  margin: (top: 0.000mm, bottom: 0.000mm, left: 0.000mm, right: 0.000mm),
+  margin: (top: 3.000mm, bottom: 10.000mm, left: 12.000mm, right: 12.000mm),
 )
 
 #show: lq.cond-set(lq.tick.with(sub: false), stroke: 0.400pt + rgb(0, 0, 0))
