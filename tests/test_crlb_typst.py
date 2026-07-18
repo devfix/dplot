@@ -32,12 +32,12 @@ def test_crlb_typst():
     y_max = 10 ** np.ceil(np.log10(crlb_max))
     # print(f'{title}: y_min={y_min}, y_max={y_max} crlb_approx={crlb_approx}')
 
-    fig = Figure(fig_name, margin={'t': 8, 'b': 12, 'l': 14, 'r': 14}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True))
+    fig = Figure(fig_name, margin={'t': 8, 'b': 12, 'l': 14, 'r': 14}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True, h_align=HAlign.CENTER))
     ts = TickSetup(enable=True)
 
     # since we use the typst output, we use typst inline math commands
     fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=2)
-    fig.axes['l'] = AxisSetup(r'$"CRLB" \ /\  (sigma^2 \/ A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
+    fig.axes['l'] = AxisSetup(r'$"CRLB" thick \/ thick (sigma^2 \/ A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
     fig.axes['r'] = AxisSetup('')
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
     fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))
