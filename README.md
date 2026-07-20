@@ -16,52 +16,41 @@ The aim is merely to provide convenient functions for the most common cases of p
 | **Compilation**      | Headless PDF compilation via `pdflatex` | Instant PDF rendering via `typst compile` |
 | **Styling Paradigm** | Key-value TikZ style libraries          | Modern Typst `#show` and `set` rules      |
 
-### Multi-Axis & Complex Layouts
+### Four-Sided Multi-Axis System
 
-Handling overlaid data with differing units or orders of magnitude is natively built into the architecture.
-
-- **Arbitrary Axis Pairing:** Seamlessly map data series to any combination of axes (e.g., bottom-left, bottom-right, or top-left) without manually calculating container bounding boxes.
-
-- **Intelligent Axis Positioning:** Dynamically positions primary and secondary axes (`position: top`, `position: right`) so labels, tick marks, and titles never collide.
+- **Independent Axis Configuration:** Fully customize Top (`'t'`), Bottom (`'b'`), Left (`'l'`), and Right (`'r'`) axes independently on a single figure.
+    
+- **Seamless Multi-Axis Overlays:** Plot different datasets against entirely different X and Y axes on the same chart (e.g., combining a bottom-left linear plot with a top-right secondary scale) without manual alignment hacks.
+    
+- **Linear & Logarithmic Scaling:** Easily switch between linear and logarithmic scales with customizable logarithmic base values.
+    
+- **Smart Data Limits & Scaling:** Automatically detect and compute axis limits from your data, apply mathematical scaling factors to axes, or override limits manually.
+    
+- **Precision Labeling:** Configure custom axis labels with adjustable millimeter padding shifts for perfect typographical alignment.
     
 
-### Precision Styling & Aesthetics
+### Comprehensive Styling & Palette
 
-`dplot` exposes fine-grained control over every visual element through modular setup classes (`LineSetup`, `Marker`, `TickSetup`, `GridSetup`, and `LegendSetup`).
-
-#### Lines & Markers
-
-- **Extensive Line Styles:** Support for solid, dotted, dashed, and dash-dotted lines, alongside custom dash-array patterns (such as densely or loosely dashed variations).
+- **Rich Color Enumerations:** Access an extensive `Color` library featuring core design colors, the complete W3C/SVG standard color palette, and the Matplotlib/Tableau 10 palette (`TAB_BLUE`, `TAB_ORANGE`, etc.).
     
-- **Alpha & Color Resolution:** Full support for RGB, RGBA, and standard color palettes with automatic transparency percentage mapping.
+- **Smart Color Lookup & Transparency:** Use string-based color lookups (e.g., `'tab:blue'`, `'dark-gray'`) or define custom transparent colors using backend-agnostic RGBA representations (`RGBAColor`).
     
-- **Smart Marker Subsetting:** Prevent symbol clutter on high-density datasets by specifying marker repeat intervals (mapping to `every` in Lilaq and `mark repeat` in PGFPlots) while keeping the underlying line continuous.
+- **Fine-Grained Line Styles:** Choose from a wide array of line styles, including solid, dashed, dotted, and dash-dotted variations, complete with density modifiers (e.g., `densely dotted`, `loosely dashed`).
     
-- **Geometric Symbol Mapping:** Rich library of built-in shapes (circles, squares, triangles, diamonds, crosses, stars) with automatic differentiation between filled symbols (solid dots) and open geometric outlines.
+- **Advanced Marker Control:** Apply diverse data markers (circles, squares, triangles, crosses, diamonds, asterisks) with built-in frequency controls (`marker_repeat` and `marker_phase`) to prevent visual clutter on dense datasets.
     
-- **Automatic Color Synchronization:** Marker strokes and fills dynamically inherit their parent plot line color by default, with overrides available for custom accents.
+- **Semantic Thickness Presets:** Apply standardized line weights using semantic enum presets (from `ULTRA_THIN` to `ULTRA_THICK`) or specify exact point measurements.
     
 
-#### Grids & Ticks
+### Grid, Tick, & Legend Control
 
-- **Granular Tick Control:** Enable or disable major and minor ticks independently, enforce exact numerical step distances, and specify exact subtick counts.
+- **Dual-Layer Grid Layouts:** Independently enable, color, and style major and minor background grid lines.
     
-- **Mirrored & Opposite Ticks:** Easily project tick marks onto opposite borders while selectively suppressing redundant numerical labels.
+- **Custom Tick Management:** Precisely configure major tick intervals, minor tick subdivisions, tick colors, line thickness, and opposite-axis mirroring.
     
-- **Custom Grid Dimensions:** Independent control over major and minor grid line thickness, color, and stroke patterns.
+- **Flexible Legend Positioning:** Place legends inside or outside the plotting area using semantic vertical and horizontal alignment anchors (`HAlign`, `VAlign`), or override with exact coordinate mapping.
     
-
-### Backend-Agnostic Legend Engine
-
-Legends in `dplot` are designed around abstract semantic positioning rather than engine-specific anchor hacks.
-
-- **Semantic Positioning:** Position legends inside or outside the data area using intuitive horizontal (`LEFT`, `CENTER`, `RIGHT`) and vertical (`TOP`, `CENTER`, `BOTTOM`) alignments.
-    
-- **Precision Coordinate Overrides:** For exact graphical placement, supply raw `(x, y)` relative coordinates that automatically translate to PGFPlots description space or Typst percentage offsets.
-    
-- **Unified Multi-Axis Legends:** `dplot` utilizes intelligent proxy handles (dummy plots with empty data arrays) across overlaid diagrams. This guarantees that data plotted on secondary axes still registers perfectly in a single, unified legend box on the primary layer.
-    
-- **Typography & Scaling:** Global font size scaling in absolute points alongside optional styled legend header titles.
+- **Typography & Unified Legends:** Customize legend font sizes in absolute points, add optional legend box titles, and automatically generate unified legend handles across complex multi-axis overlays.
 
 
 ## Example plots
@@ -90,7 +79,7 @@ Just ignore the import of `tests.tools` and the `assert` statements.
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_classic_plot_typst.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/classic_plot_typst.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/classic_plot.expected.png" width="400"/>
         </a>
       </td>
@@ -98,12 +87,12 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- s-parameters -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters_latex.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/s_parameters_latex.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/s_parameters.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_s_parameters_typst.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/s_parameters_typst.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/s_parameters.expected.png" width="400"/>
         </a>
       </td>
@@ -111,12 +100,12 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- crlb -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb_latex.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/crlb_latex.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/crlb_10.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_crlb_typst.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/crlb_typst.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/crlb_10.expected.png" width="400"/>
         </a>
       </td>
@@ -124,12 +113,12 @@ Just ignore the import of `tests.tools` and the `assert` statements.
     <!-- all axes -->
     <tr>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes_latex.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/all_axes_latex.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-latex/all_axes.expected.png" width="400"/>
         </a>
       </td>
       <td align="center">
-        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/test_all_axes_typst.py">
+        <a target="_blank" href="https://github.com/devfix/dplot/blob/main/tests/all_axes_typst.py">
           <img src="https://raw.githubusercontent.com/devfix/dplot/refs/heads/main/tests/out-typst/all_axes.expected.png" width="400"/>
         </a>
       </td>

@@ -28,14 +28,16 @@ class TypstGenerator:
             ]
         return out
 
-    def export(self, path_output_dir: str, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
+    def export(self, path_output_dir: str, export_name: Union[str, None] = None, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
         """
         Exports the Typst code to a .typ file and optionally compiles it to PDF.
         Mirrors the behavior of LatexGenerator.export().
         """
+        if export_name is None or len(export_name) == 0:
+            export_name = self.fig.name
         os.makedirs(path_output_dir, exist_ok=True)
-        path_typst = os.path.join(path_output_dir, self.fig.name + '.typ')
-        path_pdf = os.path.join(path_output_dir, self.fig.name + '.pdf')
+        path_typst = os.path.join(path_output_dir, export_name + '.typ')
+        path_pdf = os.path.join(path_output_dir, export_name + '.pdf')
 
         with open(path_typst, 'w') as fp:
             fp.write('\n'.join(self.get_typst_code()))

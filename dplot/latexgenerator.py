@@ -52,10 +52,12 @@ class LatexGenerator:
         out += self.__create_doc_end()
         return out
 
-    def export(self, path_output_dir: str, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
+    def export(self, path_output_dir: str, export_name: Union[str, None] = None, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
+        if export_name is None or len(export_name) == 0:
+            export_name = self.fig.name
         os.makedirs(path_output_dir, exist_ok=True)
-        path_latex = os.path.join(path_output_dir, self.fig.name + '.tex')
-        path_pdf = os.path.join(path_output_dir, self.fig.name + '.pdf')
+        path_latex = os.path.join(path_output_dir, export_name + '.tex')
+        path_pdf = os.path.join(path_output_dir, export_name + '.pdf')
         with open(path_latex, 'w') as fp:
             fp.write('\n'.join(self.get_latex_code()))
 
