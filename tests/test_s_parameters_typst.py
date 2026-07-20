@@ -3,7 +3,7 @@ from typing import cast
 import numpy as np
 import pandas
 from pandas import DataFrame
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST, check_embedded_typst_export
 from dplot import *
 
 
@@ -26,5 +26,9 @@ def test_s_parameters():
     fig.add('b', 'r', freqs_ghz, cast(np.array, np.angle(s11)) * 360 / np.pi, ls=LineSetup(line_style=LineStyle.DASHED, marker=Marker.SQUARE, marker_repeat=20),
             label=r'$angle S_11$')
 
+    # check standalone export, create pdf
     path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
     assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected
+
+    # check embedded (non-standalone) export
+    assert check_embedded_typst_export(fig)

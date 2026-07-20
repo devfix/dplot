@@ -1,4 +1,4 @@
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST, check_embedded_typst_export
 import numpy as np
 from dplot import *
 
@@ -13,5 +13,9 @@ def test_classic_plot():
     xs = np.linspace(-2, 2, 41)
     fig.add('b', 'l', xs, np.pow(xs, 2), ls=LineSetup(Color.BLUE))
 
+    # check standalone export, create pdf
     path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
     assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected
+
+    # check embedded (non-standalone) export
+    assert check_embedded_typst_export(fig)

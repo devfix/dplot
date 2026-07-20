@@ -1,11 +1,11 @@
 // auto-generated using dplot (TypstGenerator - Lilaq)
 #import "@preview/lilaq:0.6.0" as lq
 
-#set page(
-  width: auto,
-  height: auto,
-  margin: (top: 10.000mm, bottom: 10.000mm, left: 15.000mm, right: 15.000mm),
-)
+#block(
+  width: 80.000mm,
+  height: 70.000mm,
+  inset: (top: 10.000mm, bottom: 10.000mm, left: 15.000mm, right: 15.000mm),
+)[
 
 #block(width: 50.000mm, height: 50.000mm, [
   #place(top + left)[
@@ -103,3 +103,5 @@
     )
   ]
 ])
+
+]

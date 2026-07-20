@@ -1,4 +1,4 @@
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_TYPST, check_embedded_typst_export
 from dplot import *
 
 
@@ -26,5 +26,9 @@ def test_all_axes():
             ls=LineSetup(plot_color=Color.BLUEVIOLET, line_style=LineStyle.SOLID, marker=Marker.SQUARE, marker_repeat=2, marker_phase=1))
     fig.add('t', 'r', [-2, -1, 0], [0, 1, 0], ls=LineSetup(plot_color=Color.ROSYBROWN, line_width=0.5))
 
+    # check standalone export, create pdf
     path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
     assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected
+
+    # check embedded (non-standalone) export
+    assert check_embedded_typst_export(fig)

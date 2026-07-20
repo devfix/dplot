@@ -1,11 +1,11 @@
 // auto-generated using dplot (TypstGenerator - Lilaq)
 #import "@preview/lilaq:0.6.0" as lq
 
-#set page(
-  width: auto,
-  height: auto,
-  margin: (top: 8.000mm, bottom: 12.000mm, left: 14.000mm, right: 14.000mm),
-)
+#block(
+  width: 78.000mm,
+  height: 70.000mm,
+  inset: (top: 8.000mm, bottom: 12.000mm, left: 14.000mm, right: 14.000mm),
+)[
 
 #show: lq.cond-set(lq.spine, stroke: 0.800pt + rgb(0, 0, 0))
 #show: lq.cond-set(lq.grid.with(kind: "x"), stroke: none, stroke-sub: none)
@@ -40,3 +40,5 @@
     mark: none,
   ),
 )
+
+]

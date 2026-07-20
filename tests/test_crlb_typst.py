@@ -1,11 +1,10 @@
-import inspect
 import numpy as np
 from numpy import pi
-from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX
+from tests.tools import check_identical_pdf, PATH_OUTPUT_DIR_LATEX, PATH_OUTPUT_DIR_TYPST, check_embedded_typst_export
 from dplot import *
 
 
-def test_crlb():
+def test_crlb_typst():
     #  N: number of samples for the estimator
     N = 10
     phi = 0
@@ -35,12 +34,16 @@ def test_crlb():
     fig = Figure(fig_name, margin={'t': 8, 'b': 12, 'l': 14, 'r': 14}, background_color=Color.GAINSBORO, legend_setup=LegendSetup(enable=True, h_align=HAlign.CENTER))
     ts = TickSetup(enable=True)
 
-    # since we use the latex output, we use tex inline math commands
-    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=2)
-    fig.axes['l'] = AxisSetup(r'$\mathrm{CRLB} \ /\  (\sigma^2 / A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=5, grid=GridSetup(major_enable=True, minor_enable=True))
+    # since we use the typst output, we use typst inline math commands
+    fig.axes['b'] = AxisSetup(r'$f_0$', scale=1, tick=ts, label_shift=0)
+    fig.axes['l'] = AxisSetup(r'$"CRLB" thick \/ thick (sigma^2 \/ A^2)$', scale=1, tick=ts, limits=(y_min, y_max), log=True, label_shift=0, grid=GridSetup(major_enable=True, minor_enable=True))
     fig.axes['r'] = AxisSetup('')
     fig.add('b', 'l', f0s, crlb_exact, label='exact')
     fig.add('b', 'l', np.array([f0_min, f0_max]), np.ones(2) * crlb_approx, label='approx', ls=LineSetup(line_style=LineStyle.DOTTED))
 
-    path_latex, path_latex_pdf = LatexGenerator(fig).export(PATH_OUTPUT_DIR_LATEX)  # generate pdf via LaTex
-    assert check_identical_pdf(path_latex_pdf)  # check that pdf looks as expected
+    # check standalone export, create pdf
+    path_typst, path_typst_pdf = TypstGenerator(fig).export(PATH_OUTPUT_DIR_TYPST)  # generate pdf via Typst
+    assert check_identical_pdf(path_typst_pdf)  # check that pdf looks as expected
+
+    # check embedded (non-standalone) export
+    assert check_embedded_typst_export(fig)
