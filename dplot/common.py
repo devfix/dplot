@@ -119,7 +119,7 @@ class AxisSetup:
             label_shift: float = 0,  # in mm
             scale: float = 1,
             log: bool = False,
-            log_base: str = '10',  # no float, otherwise the number of digits is not clear
+            log_base: str = '10',  # must be string. Use calc.e in the typst generator for euler's number
             limits: Union[None, tuple[float, float]] = None,
             grid: GridSetup = GridSetup(),
             tick: TickSetup = TickSetup(),

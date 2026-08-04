@@ -265,7 +265,7 @@ class TypstGenerator:
                 label_val = self.__fmt_axis_label(asx.label, "x", getattr(asx, 'label_shift', None))
                 args.append(f'xlabel: {label_val}')
             if asx.log:
-                args.append('xscale: "log"')
+                args.append(f'xscale: lq.scale.log(base: {asx.log_base})')
 
             x_tick_opts = []
             if ax in ('t', getattr(XAxis, 'TOP', 't')):
