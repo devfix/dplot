@@ -14,6 +14,32 @@ class RGBAColor:
     b: int
     a: float = 1.0
 
+    @classmethod
+    def from_hex(cls, hex: str) -> RGBAColor:
+        hex = hex.strip()
+        if hex.startswith('#'):
+            hex = hex[1:]
+
+        if len(hex) == 3:
+            # Shorthand form, e.g. "f0a" -> "ff00aa"
+            hex = ''.join(c * 2 for c in hex)
+        elif len(hex) == 4:
+            # Shorthand with alpha, e.g. "f0a8" -> "ff00aa88"
+            hex = ''.join(c * 2 for c in hex)
+
+        if len(hex) not in (6, 8):
+            raise ValueError(f"Invalid hex color string: '{hex}'")
+
+        r = int(hex[0:2], 16)
+        g = int(hex[2:4], 16)
+        b = int(hex[4:6], 16)
+
+        a = 1.0
+        if len(hex) == 8:
+            a = int(hex[6:8], 16) / 255.0
+
+        return cls(r=r, g=g, b=b, a=a)
+
     def __post_init__(self):
         assert 0 <= self.r <= 255, f"Red component {self.r} out of bounds [0, 255]"
         assert 0 <= self.g <= 255, f"Green component {self.g} out of bounds [0, 255]"
@@ -221,6 +247,29 @@ class Color(Enum):
 
 AnyColor = Union[Color, RGBAColor, Tuple[int, int, int], str]
 
+# Published in Nature Methods, designed specifically for scientific visualization
+WongColorblindPalette: list[RGBAColor] = [
+    RGBAColor.from_hex('#000000'),
+    RGBAColor.from_hex('#E69F00'),
+    RGBAColor.from_hex('#56B4E9'),
+    RGBAColor.from_hex('#009E73'),
+    RGBAColor.from_hex('#F0E442'),
+    RGBAColor.from_hex('#D55E00'),
+    RGBAColor.from_hex('#0072B2'),
+    RGBAColor.from_hex('#CC79A7')
+]
+
+# Paul Tol's palette, optimized for maximum distinctiveness
+TolQualitativePalette: list[RGBAColor] = [
+    RGBAColor.from_hex('#332288'),
+    RGBAColor.from_hex('#117733'),
+    RGBAColor.from_hex('#CC6677'),
+    RGBAColor.from_hex('#999933'),
+    RGBAColor.from_hex('#DDCC77'),
+    RGBAColor.from_hex('#AA4499'),
+    RGBAColor.from_hex('#88CCEE'),
+    RGBAColor.from_hex('#44AA99')
+]
 
 
 def _resolve_color(val: AnyColor) -> RGBAColor:
