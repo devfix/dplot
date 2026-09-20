@@ -1,5 +1,5 @@
 from .color import Color, RGBAColor
-from .common import HAlign, VAlign, Thickness, LineStyle, Marker, Environment, GridSetup, TickSetup, AxisSetup, LineSetup, Data
+from .common import HAlign, VAlign, Thickness, LineStyle, Marker, Environment, GridSetup, TickSetup, AxisSetup, LineSetup, Data, LineFormattingPalette
 from .legend import LegendPosition, LegendSetup
 from .figure import Figure
 from .latexgenerator import LatexGenerator
