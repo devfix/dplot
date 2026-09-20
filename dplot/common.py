@@ -1,7 +1,8 @@
-from enum import Enum
 import math
+from enum import Enum
 from typing import Union, Literal, Collection
-from .color import Color, AnyColor
+from dataclasses import dataclass
+from .color import Color, AnyColor, WongColorblindPalette
 
 
 # https://tikz.dev/pgfplots/reference-markers
@@ -54,6 +55,17 @@ class LineStyle(Enum):
     LOOSELY_DASH_DOT_DOTTED = 'loosely dashdotdotted'
 
 
+LineStylePalette = [
+    LineStyle.SOLID,
+    LineStyle.DOTTED,
+    LineStyle.DASHED,
+    LineStyle.DASH_DOTTED,
+    LineStyle.DENSELY_DOTTED,
+    LineStyle.DASH_DOT_DOTTED,
+    LineStyle.LOOSELY_DASHED,
+    LineStyle.DENSELY_DASH_DOT_DOTTED
+]
+
 class Marker(Enum):
     NONE = 'none'
     DOT = 'dot'
@@ -64,6 +76,12 @@ class Marker(Enum):
     CROSS = 'cross'
     PLUS = 'plus'
     ASTERISK = 'asterisk'
+
+MarkerPalette = [Marker.DOT, Marker.SQUARE, Marker.CROSS, Marker.ASTERISK, Marker.PLUS, Marker.CIRCLE, Marker.TRIANGLE, Marker.DIAMOND]
+
+
+# list() is required to enforce that an iteration always starts at the beginning of LineFormattingPalette
+LineFormattingPalette = list(zip(WongColorblindPalette, LineStylePalette, MarkerPalette))
 
 
 class Environment:
@@ -134,15 +152,16 @@ class AxisSetup:
         self.tick = tick
 
 
+@dataclass(frozen=True)
 class LineSetup:
-    def __init__(self, plot_color: AnyColor = Color.BLACK, line_style: LineStyle = LineStyle.SOLID, line_width: AnyThickness = 1,
-                 marker: Marker = Marker.NONE, marker_repeat: int | float = 1, marker_phase: int = 0):
-        self.plot_color: AnyColor = plot_color
-        self.line_style: LineStyle = line_style
-        self.line_width: AnyThickness = line_width
-        self.marker: Marker = marker
-        self.marker_repeat: int = int(marker_repeat)
-        self.marker_phase: int = int(marker_phase)
+    plot_color: AnyColor = Color.BLACK
+    line_style: LineStyle = LineStyle.SOLID
+    line_width: AnyThickness = Thickness.SEMITHICK
+    marker: Marker = Marker.NONE
+    marker_count: float = 5  # total number of markers to be shown, might be one additional if zero phase
+    marker_phase: float = 0  # fraction of the marker distance by which the markers are shiftet to the right
+    # marker_count is of type float since it will be converted to a discrete number of data points
+    # during output generation and float allows the user fine-tuning if wished
 
 
 class Data:
@@ -172,10 +191,3 @@ class Data:
         self.label = label
         self.ls = LineSetup() if ls is None else ls
         self._id = None
-
-    def cfg_marker(self, phase_frac: float = 0.0, n_samples=0, n_markers: int = 5) -> 'Data':
-        if n_samples == 0:
-            n_samples = len(self.dx)
-        self.ls.marker_repeat = math.floor(n_samples / n_markers)
-        self.ls.marker_phase = round((phase_frac % 1) * n_samples / n_markers)
-        return self

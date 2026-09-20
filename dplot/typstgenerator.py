@@ -133,10 +133,10 @@ class TypstGenerator:
             Marker.DOT: ('lq.marks.o', 'fill'),  # Filled circle
             Marker.CIRCLE: ('lq.marks.o', 'none'),  # Open circle
             Marker.SQUARE: ('lq.marks.s', 'none'),  # Open square
-            Marker.TRIANGLE: ('lq.marks.^', 'none'),  # Open triangle
+            Marker.TRIANGLE: ('lq.marks.at("^")', 'none'),  # Open triangle
             Marker.DIAMOND: ('lq.marks.d', 'none'),  # Open diamond
             Marker.CROSS: ('lq.marks.x', 'none'),
-            Marker.PLUS: ('lq.marks.+', 'none'),
+            Marker.PLUS: ('lq.marks.at("+")', 'none'),
             Marker.ASTERISK: ('lq.marks.asterisk', 'none'),
         }
         if marker not in Marker:
@@ -302,7 +302,7 @@ class TypstGenerator:
                 label_val = self.__fmt_axis_label(asy.label, "y", getattr(asy, 'label_shift', None))
                 args.append(f'ylabel: {label_val}')
             if asy.log:
-                args.append('yscale: "log"')
+                args.append(f'yscale: lq.scale.log(base: {asy.log_base})')
 
             y_tick_opts = []
             if ay in ('r', getattr(YAxis, 'RIGHT', 'r')):
@@ -495,16 +495,13 @@ class TypstGenerator:
 
         # Omit step intervals on dummy plots to prevent step evaluations on empty arrays
         if not is_dummy and data.ls.marker != Marker.NONE:
-            repeat = getattr(data.ls, 'marker_repeat', 1)
-            phase = getattr(data.ls, 'marker_phase', 0)
-            total_len = len(data.dx)
+            # repeat: after how many data points the next marker is placed
+            repeat_frac = float(len(data.dx)) / float(data.ls.marker_count)
+            repeat = int(math.floor(repeat_frac))
+            # offset: number of data points to shift the markers to the right
+            offset = int(round(data.ls.marker_phase * repeat_frac))
 
-            if phase > 0:
-                # Custom phase + stride using a native Typst range constructor
-                plot_args.append(f'every: range({phase}, {total_len}, step: {repeat}),')
-            elif repeat > 1:
-                # Flat integer fallback for pure step stride beginning at index 0
-                plot_args.append(f'every: {repeat},')
+            plot_args.append(f'every: range({offset}, {len(data.dx)}, step: {repeat}),')
 
         lines = ['  lq.plot(']
         for pa in plot_args:
