@@ -279,7 +279,9 @@ class TypstGenerator:
                 x_tick_opts.append('ticks: none')
                 x_tick_opts.append('subticks: none')
             else:
-                if asx.tick.major_distance is not None:
+                if asx.tick.major_values is not None:
+                    x_tick_opts.append('ticks: ' + self.__fmt_array(asx.tick.major_values))
+                elif asx.tick.major_distance is not None:
                     x_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asx.tick.major_distance)})')
                 if asx.tick.minor_num > 0:
                     x_tick_opts.append(f'subticks: {asx.tick.minor_num}')
@@ -316,7 +318,9 @@ class TypstGenerator:
                 y_tick_opts.append('ticks: none')
                 y_tick_opts.append('subticks: none')
             else:
-                if asy.tick.major_distance is not None:
+                if asy.tick.major_values is not None:
+                    y_tick_opts.append('ticks: ' + self.__fmt_array(asy.tick.major_values))
+                elif asy.tick.major_distance is not None:
                     y_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asy.tick.major_distance)})')
                 if asy.tick.minor_num > 0:
                     y_tick_opts.append(f'subticks: {asy.tick.minor_num}')

@@ -29,7 +29,6 @@ class Thickness(Enum):
     VERY_THICK = 1.2
     ULTRA_THICK = 1.6
 
-
 AnyThickness = Union[Thickness, float]
 
 
@@ -113,6 +112,7 @@ class TickSetup:
             self,
             enable: bool = True,  # enable / disable tick
             opposite: bool = False,  # enable ticks on opposite axis
+            major_values: Union[None, TypeData] = None,  # create axis values automatically (None) or specify them
             major_thickness: AnyThickness = Thickness.THIN,  # in pt
             major_color: AnyColor = Color.BLACK,
             major_distance: Union[float, None] = None,
