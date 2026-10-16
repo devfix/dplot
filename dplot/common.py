@@ -122,6 +122,7 @@ class TickSetup:
     ):
         self.enable = enable
         self.opposite = opposite
+        self.major_values = major_values
         self.major_thickness = major_thickness
         self.major_color = major_color
         self.major_distance = major_distance
