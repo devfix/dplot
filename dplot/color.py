@@ -247,16 +247,17 @@ class Color(Enum):
 
 AnyColor = Union[Color, RGBAColor, Tuple[int, int, int], str]
 
-# Published in Nature Methods, designed specifically for scientific visualization
+# Okabe & Ito (2008): same colors as the Wong palette, in the original order
+# (black, orange, sky blue, bluish green, yellow, blue, vermillion, reddish purple)
 WongColorblindPalette: list[RGBAColor] = [
     RGBAColor.from_hex('#000000'),
     RGBAColor.from_hex('#E69F00'),
-    RGBAColor.from_hex('#56B4E9'),
-    RGBAColor.from_hex('#009E73'),
-    RGBAColor.from_hex('#F0E442'),
-    RGBAColor.from_hex('#D55E00'),
     RGBAColor.from_hex('#0072B2'),
-    RGBAColor.from_hex('#CC79A7')
+    RGBAColor.from_hex('#009E73'),
+    RGBAColor.from_hex('#D55E00'),
+    RGBAColor.from_hex('#CC79A7'),
+    RGBAColor.from_hex('#F0E442'),
+    RGBAColor.from_hex('#56B4E9')
 ]
 
 # Paul Tol's palette, optimized for maximum distinctiveness

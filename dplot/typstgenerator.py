@@ -189,6 +189,10 @@ class TypstGenerator:
             '#block(',
             f'  width: {(m["l"]+m["r"]+w):.3f}mm,',
             f'  height: {(m["t"]+m["b"]+h):.3f}mm,',
+            ]
+        if self.fig.draft:
+            out += ['  stroke: 0.1pt+gray,']
+        out += [
             f'  inset: (top: {m["t"]:.3f}mm, bottom: {m["b"]:.3f}mm, left: {m["l"]:.3f}mm, right: {m["r"]:.3f}mm),',
             ')[',
             ''
@@ -234,6 +238,7 @@ class TypstGenerator:
             out += [f'    {line}' for line in diag_lines]
             out.append('  ]')
         out.append('])')
+
         return out
 
     def __create_diagram(self, ax: XAxis, ay: YAxis, is_primary: bool, draw_x: bool = True, draw_y: bool = True) -> list[str]:
@@ -460,7 +465,10 @@ class TypstGenerator:
                 # Inject empty dummy plots into the primary diagram to generate unified legend entries
                 out += self.__create_plot_call(data, asx, asy, is_dummy=True)
 
+        out += self.__create_placements()
+
         out.append(')')
+
         return out
 
     def __create_plot_call(self, data: Data, asx: Union[AxisSetup, None], asy: Union[AxisSetup, None], is_dummy: bool = False) -> list[str]:
@@ -512,3 +520,32 @@ class TypstGenerator:
             lines.append(f'    {pa}')
         lines.append('  ),')
         return lines
+
+    def __create_placements(self) -> list[str]:
+        def format_placement(p: Placement) -> str:
+            s = f'{p.x}, {p.y}'
+            if p.halign == HAlign.LEFT:
+                halign = 'left'
+            elif p.halign == HAlign.CENTER:
+                halign = 'center'
+            elif p.halign == HAlign.RIGHT:
+                halign = 'right'
+            else:
+                raise ValueError(f'Unknown halign: {p.halign}')
+            if p.valign == VAlign.TOP:
+                valign = 'top'
+            elif p.valign == VAlign.CENTER:
+                valign = 'horizon'
+            elif p.valign == VAlign.BOTTOM:
+                valign = 'bottom'
+            else:
+                raise ValueError(f'Unknown valign: {p.valign}')
+            s += f', align: {valign} + {halign}'
+            s += f', clip: {'true' if p.clip else 'false'}'
+            s += f', z-index: {p.z_index}'
+            return s
+
+        return [
+            f'  lq.place({format_placement(p)})[{p.body}]'
+            for p in self.fig.place_data
+        ]

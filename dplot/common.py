@@ -1,6 +1,6 @@
 import math
 from enum import Enum
-from typing import Union, Literal, Collection
+from typing import Union, Literal, Collection, Optional
 from dataclasses import dataclass
 from .color import Color, AnyColor, WongColorblindPalette
 
@@ -76,7 +76,7 @@ class Marker(Enum):
     PLUS = 'plus'
     ASTERISK = 'asterisk'
 
-MarkerPalette = [Marker.DOT, Marker.SQUARE, Marker.CROSS, Marker.ASTERISK, Marker.PLUS, Marker.CIRCLE, Marker.TRIANGLE, Marker.DIAMOND]
+MarkerPalette = [Marker.DOT, Marker.SQUARE, Marker.CROSS, Marker.CIRCLE, Marker.TRIANGLE, Marker.ASTERISK, Marker.PLUS, Marker.DIAMOND]
 
 
 # list() is required to enforce that an iteration always starts at the beginning of LineFormattingPalette
@@ -192,3 +192,13 @@ class Data:
         self.label = label
         self.ls = LineSetup() if ls is None else ls
         self._id = None
+
+@dataclass(frozen=True)
+class Placement:
+    x: float
+    y: float
+    body: str
+    halign: HAlign = HAlign.CENTER
+    valign: VAlign = VAlign.CENTER
+    clip: bool = False
+    z_index = 21

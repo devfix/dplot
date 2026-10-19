@@ -19,7 +19,8 @@ class Figure:
             margin=None,
             basic_thickness: AnyThickness = Thickness.THICK,  # in pt
             background_color: AnyColor = Color.WHITE,
-            legend_setup: LegendSetup = LegendSetup()
+            legend_setup: LegendSetup = LegendSetup(),
+            draft: bool = False,
     ):
         self.name: str = name
         self.title: str = title
@@ -29,8 +30,10 @@ class Figure:
         self.basic_thickness: AnyThickness = basic_thickness  # in pt
         self.background_color: AnyColor = background_color
         self.legend_setup = legend_setup
+        self.draft = draft
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
+        self.place_data: list[Placement] = []
         self._data_counter = 0
 
     def add_data(self, data: Data):
@@ -45,6 +48,9 @@ class Figure:
             label: str = '',
             ls: Union[LineSetup, None] = None):
         self.add_data(Data(ax, ay, dx, dy, label, ls))
+
+    def add_placement(self, placement: Placement):
+        self.place_data.append(placement)
 
     def _cvt_pdf_to_svg(self, path_pdf: str, path_svg: str, quiet: bool):
         if shutil.which(Environment.PATH_PDF2SVG) is None:
