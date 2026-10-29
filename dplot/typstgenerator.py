@@ -9,17 +9,22 @@ from .figure import Figure
 
 
 class TypstGenerator:
-    def __init__(self, fig: Figure, standalone: bool = True):
+    def __init__(self, fig: Figure, standalone: bool = True, imports: List[str] | None = None):
         self.fig = fig
         self.standalone = standalone
+        self.imports = imports if imports is not None else []
 
     def get_typst_code(self) -> list[str]:
         """Generates the complete Typst document string using Lilaq."""
         self.fig.validate()
+        out = [
+            '// auto-generated using dplot (TypstGenerator - Lilaq)',
+            '#import "@preview/lilaq:0.6.0" as lq',
+        ] + self.imports
         if self.standalone:
-            out = self.__create_doc_begin_standalone()
+            out += self.__create_doc_begin_standalone()
         else:
-            out = self.__create_doc_begin_include()
+            out += self.__create_doc_begin_include()
         out += self.__create_diagram_groups()
         if not self.standalone:
             out += [
@@ -81,7 +86,8 @@ class TypstGenerator:
             return f"({formatted[0]},)"
         return f"({', '.join(formatted)})"
 
-    def __fmt_thickness(self, thickness: AnyThickness) -> str:
+    @staticmethod
+    def format_thickness(thickness: AnyThickness) -> str:
         """Converts Thickness enum or float to a Typst dimension string in points."""
         if isinstance(thickness, Thickness):
             val = thickness.value
@@ -89,7 +95,8 @@ class TypstGenerator:
             val = float(thickness)
         return f'{val:.3f}pt'
 
-    def __fmt_linestyle(self, linestyle: LineStyle) -> str:
+    @staticmethod
+    def format_linestyle(linestyle: LineStyle) -> str:
         """
         Returns the appropriate Typst stroke definition.
         Uses native shorthands for standard styles, and custom dash arrays for variants.
@@ -114,7 +121,8 @@ class TypstGenerator:
         }
         return mapping.get(linestyle, '"solid"')
 
-    def __fmt__color(self, color: AnyColor) -> str:
+    @staticmethod
+    def format_color(color: AnyColor) -> str:
         """
         Converts a Color enum, RGBAColor, tuple, or string name to a valid Typst/Lilaq color string.
         Example output: 'rgb(31, 119, 180)' or 'rgb(255, 0, 0, 50%)'
@@ -125,6 +133,10 @@ class TypstGenerator:
             alpha_str = f"{int(alpha_pct)}%" if alpha_pct.is_integer() else f"{alpha_pct}%"
             return f'rgb({col.r}, {col.g}, {col.b}, {alpha_str})'
         return f'rgb({col.r}, {col.g}, {col.b})'
+
+    @staticmethod
+    def format_stroke(color: AnyColor, thickness: AnyThickness, linestyle: LineStyle):
+        return f'(paint: {TypstGenerator.format_color(color)}, thickness: {TypstGenerator.format_thickness(thickness)}, dash: {TypstGenerator.format_linestyle(linestyle)})'
 
     def __fmt_marker(self, marker: Marker, color: AnyColor) -> str:
         """Returns the native Typst/Lilaq marker closure bound to the plot line color."""
@@ -145,7 +157,7 @@ class TypstGenerator:
             return 'mark: none'
 
         mark_func, inner_fill = mapping.get(marker, ('lq.marks.circle', 'none'))
-        col_str = self.__fmt__color(color)
+        col_str = TypstGenerator.format_color(color)
 
         return f'mark: ((mark, fill: {col_str}, stroke: {col_str}) => ({mark_func})((size: mark.size, stroke: stroke, fill: {inner_fill})))'
 
@@ -165,9 +177,6 @@ class TypstGenerator:
         """Sets up page dimensions, margins around the data-area, and imports Lilaq for standalone Typst."""
         m = self.fig.margin
         out = [
-            '// auto-generated using dplot (TypstGenerator - Lilaq)',
-            '#import "@preview/lilaq:0.6.0" as lq',
-            '',
             '#set page(',
             '  width: auto,',
             '  height: auto,',
@@ -183,9 +192,6 @@ class TypstGenerator:
         w = self.fig.width
         h = self.fig.height
         out = [
-            '// auto-generated using dplot (TypstGenerator - Lilaq)',
-            '#import "@preview/lilaq:0.6.0" as lq',
-            '',
             '#block(',
             f'  width: {(m["l"]+m["r"]+w):.3f}mm,',
             f'  height: {(m["t"]+m["b"]+h):.3f}mm,',
@@ -256,7 +262,7 @@ class TypstGenerator:
             if self.fig.title:
                 args.append(f'title: [{self.fig.title}]')
             if self.fig.background_color != Color.WHITE:
-                args.append(f'fill: {self.__fmt__color(self.fig.background_color)}')
+                args.append(f'fill: {TypstGenerator.format_color(self.fig.background_color)}')
         else:
             args.append('fill: none')
 
@@ -345,7 +351,7 @@ class TypstGenerator:
 
         # FIXED: Apply basic_thickness to the outer spines (bounding borders) of the diagram
         if is_primary and getattr(self.fig, 'basic_thickness', None) is not None:
-            thick_str = self.__fmt_thickness(self.fig.basic_thickness)
+            thick_str = TypstGenerator.format_thickness(self.fig.basic_thickness)
             prefix_rules.append(f'#show: lq.cond-set(lq.spine, stroke: {thick_str} + rgb(0, 0, 0))')
 
         def get_grid_stroke(axis_setup: Union[AxisSetup, None], is_major: bool, enabled: bool) -> str:
@@ -354,8 +360,8 @@ class TypstGenerator:
             is_enabled = axis_setup.grid.major_enable if is_major else axis_setup.grid.minor_enable
             if not is_enabled:
                 return "none"
-            thickness = self.__fmt_thickness(axis_setup.grid.major_thickness if is_major else axis_setup.grid.minor_thickness)
-            color = self.__fmt__color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
+            thickness = TypstGenerator.format_thickness(axis_setup.grid.major_thickness if is_major else axis_setup.grid.minor_thickness)
+            color = TypstGenerator.format_color(axis_setup.grid.major_color if is_major else axis_setup.grid.minor_color)
             return f"{thickness} + {color}"
 
         x_maj = get_grid_stroke(asx, is_major=True, enabled=draw_x)
@@ -378,8 +384,8 @@ class TypstGenerator:
             if not is_major and axis_setup.tick.minor_num <= 0:
                 return "none"
             ref_tick = axis_setup.tick
-            thickness = self.__fmt_thickness(ref_tick.major_thickness if is_major else ref_tick.minor_thickness)
-            color = self.__fmt__color(ref_tick.major_color if is_major else ref_tick.minor_color)
+            thickness = TypstGenerator.format_thickness(ref_tick.major_thickness if is_major else ref_tick.minor_thickness)
+            color = TypstGenerator.format_color(ref_tick.major_color if is_major else ref_tick.minor_color)
             return f"{thickness} + {color}"
 
         x_tick_maj = get_tick_stroke(asx, is_major=True, enabled=draw_x)
@@ -466,6 +472,7 @@ class TypstGenerator:
                 out += self.__create_plot_call(data, asx, asy, is_dummy=True)
 
         out += self.__create_placements()
+        out += self.fig.lilaq_commands
 
         out.append(')')
 
@@ -490,15 +497,18 @@ class TypstGenerator:
             f'{ys_str},',
         ]
 
+        if self.fig.smooth and not self.fig.draft:
+            plot_args.append(f'smooth: true,')
+
         if data.label:
             plot_args.append(f'label: [{data.label}],')
 
         if data.ls.line_style == LineStyle.NONE:
             plot_args.append('stroke: none,')
         else:
-            color_str = self.__fmt__color(data.ls.plot_color)
-            thick_str = self.__fmt_thickness(data.ls.line_width)
-            dash_str = self.__fmt_linestyle(data.ls.line_style)
+            color_str = TypstGenerator.format_color(data.ls.plot_color)
+            thick_str = TypstGenerator.format_thickness(data.ls.line_width)
+            dash_str = TypstGenerator.format_linestyle(data.ls.line_style)
             stroke_val = f'(paint: {color_str}, thickness: {thick_str}, dash: {dash_str})'
             plot_args.append(f'stroke: {stroke_val},')
 
@@ -546,6 +556,6 @@ class TypstGenerator:
             return s
 
         return [
-            f'  lq.place({format_placement(p)})[{p.body}]'
+            f'  lq.place({format_placement(p)})[{p.body}],'
             for p in self.fig.place_data
         ]

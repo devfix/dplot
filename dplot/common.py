@@ -2,6 +2,7 @@ import math
 from enum import Enum
 from typing import Union, Literal, Collection, Optional
 from dataclasses import dataclass
+from itertools import repeat
 from .color import Color, AnyColor, WongColorblindPalette
 
 
@@ -80,7 +81,8 @@ MarkerPalette = [Marker.DOT, Marker.SQUARE, Marker.CROSS, Marker.CIRCLE, Marker.
 
 
 # list() is required to enforce that an iteration always starts at the beginning of LineFormattingPalette
-LineFormattingPalette = list(zip(WongColorblindPalette, LineStylePalette, MarkerPalette))
+FormattingPalette = list(zip(WongColorblindPalette, LineStylePalette, MarkerPalette))
+FormattingPaletteGrayscale = list(zip(repeat(Color.BLACK), LineStylePalette, MarkerPalette))
 
 
 class Environment:

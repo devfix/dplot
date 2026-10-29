@@ -1,5 +1,5 @@
 from .color import Color, RGBAColor
-from .common import HAlign, VAlign, Thickness, LineStyle, Marker, Environment, GridSetup, TickSetup, AxisSetup, LineSetup, Data, LineFormattingPalette
+from .common import HAlign, VAlign, Thickness, LineStyle, Marker, Environment, GridSetup, TickSetup, AxisSetup, LineSetup, Data, FormattingPalette, FormattingPaletteGrayscale
 from .legend import LegendPosition, LegendSetup
 from .figure import Figure
 from .latexgenerator import LatexGenerator
@@ -24,5 +24,6 @@ __all__ = [
     "Figure",
     "LatexGenerator",
     "TypstGenerator",
-    "LineFormattingPalette"
+    "FormattingPalette",
+    "FormattingPaletteGrayscale"
 ]

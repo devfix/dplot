@@ -21,6 +21,7 @@ class Figure:
             background_color: AnyColor = Color.WHITE,
             legend_setup: LegendSetup = LegendSetup(),
             draft: bool = False,
+            smooth: bool = False  # only applies if not in draft mode
     ):
         self.name: str = name
         self.title: str = title
@@ -31,9 +32,11 @@ class Figure:
         self.background_color: AnyColor = background_color
         self.legend_setup = legend_setup
         self.draft = draft
+        self.smooth = smooth
         self.axes = cast(dict[Union[XAxis, YAxis], AxisSetup], dict([(axis, None) for axis in get_args(XAxis) + get_args(YAxis)]))
         self.plot_data: list[Data] = []
         self.place_data: list[Placement] = []
+        self.lilaq_commands: list[str] = []
         self._data_counter = 0
 
     def add_data(self, data: Data):
@@ -51,6 +54,9 @@ class Figure:
 
     def add_placement(self, placement: Placement):
         self.place_data.append(placement)
+
+    def add_lilaq_code(self, code: str):
+        self.lilaq_commands.append(f'lq.{code},')
 
     def _cvt_pdf_to_svg(self, path_pdf: str, path_svg: str, quiet: bool):
         if shutil.which(Environment.PATH_PDF2SVG) is None:
