@@ -4,6 +4,7 @@ from .legend import LegendPosition, LegendSetup
 from .figure import Figure
 from .latexgenerator import LatexGenerator
 from .typstgenerator import TypstGenerator
+from .optimization import reduce_curve
 
 __all__ = [
     "Color",

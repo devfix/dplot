@@ -42,15 +42,15 @@ class LineStyle(Enum):
     NONE = 'none'
     SOLID = 'solid'
     DOTTED = 'dotted'
+    DASHED = 'dashed'
+    DASH_DOTTED = 'dashdotted'
+    DASH_DOT_DOTTED = 'dashdotdotted'
     DENSELY_DOTTED = 'densely dotted'
     LOOSELY_DOTTED = 'loosely dotted'
-    DASHED = 'dashed'
     DENSELY_DASHED = 'densely dashed'
     LOOSELY_DASHED = 'loosely dashed'
-    DASH_DOTTED = 'dashdotted'
     DENSELY_DASH_DOTTED = 'densely dashdotted'
     LOOSELY_DASH_DOTTED = 'loosely dashdotted'
-    DASH_DOT_DOTTED = 'dashdotdotted'
     DENSELY_DASH_DOT_DOTTED = 'densely dashdotdotted'
     LOOSELY_DASH_DOT_DOTTED = 'loosely dashdotdotted'
 
@@ -68,7 +68,7 @@ LineStylePalette = [
 
 class Marker(Enum):
     NONE = 'none'
-    DOT = 'dot'
+    DOT = 'dot'  # filled circle
     CIRCLE = 'circle'
     SQUARE = 'square'
     TRIANGLE = 'triangle'
@@ -76,8 +76,10 @@ class Marker(Enum):
     CROSS = 'cross'
     PLUS = 'plus'
     ASTERISK = 'asterisk'
+    SQUARE_FILLED = 'square_filled'
+    TRIANGLE_FILLED = 'triangle_filled'
 
-MarkerPalette = [Marker.DOT, Marker.SQUARE, Marker.CROSS, Marker.CIRCLE, Marker.TRIANGLE, Marker.ASTERISK, Marker.PLUS, Marker.DIAMOND]
+MarkerPalette = [Marker.CIRCLE, Marker.TRIANGLE, Marker.SQUARE, Marker.ASTERISK, Marker.DIAMOND, Marker.CROSS, Marker.PLUS, Marker.DOT, Marker.SQUARE_FILLED, Marker.TRIANGLE_FILLED]
 
 
 # list() is required to enforce that an iteration always starts at the beginning of LineFormattingPalette
@@ -175,7 +177,8 @@ class Data:
             dx: TypeData,
             dy: TypeData,
             label: str = '',
-            ls: Union[LineSetup, None] = None
+            ls: Union[LineSetup, None] = None,
+            dpmm: float = 0
     ):
         """
         Construct new data set.
@@ -185,6 +188,7 @@ class Data:
         :param dy: data for y-axis
         :param label: label string, supports latex
         :param ls: line-setup
+        :param dpmm: dots per mm for curve optimization, zero means disabled
         """
         assert len(dx) == len(dy)
         self.ax = ax
@@ -193,10 +197,13 @@ class Data:
         self.dy = dy
         self.label = label
         self.ls = LineSetup() if ls is None else ls
+        self.dpmm = dpmm
         self._id = None
 
 @dataclass(frozen=True)
 class Placement:
+    ax: XAxis
+    ay: YAxis
     x: float
     y: float
     body: str

@@ -6,6 +6,7 @@ from typing import cast, Collection, Union
 from .color import _resolve_color, AnyColor, Color
 from .common import *
 from .figure import Figure
+from .optimization import reduce_curve
 
 
 class TypstGenerator:
@@ -21,6 +22,7 @@ class TypstGenerator:
             '// auto-generated using dplot (TypstGenerator - Lilaq)',
             '#import "@preview/lilaq:0.6.0" as lq',
         ] + self.imports
+        out += ['#show link: it => if sys.inputs.at("dplot-disable-links", default: none) != none { it.body } else { it }  // disable link so that the defined symbols can be used in the plot without table of symbols']
         if self.standalone:
             out += self.__create_doc_begin_standalone()
         else:
@@ -33,16 +35,16 @@ class TypstGenerator:
             ]
         return out
 
-    def export(self, path_output_dir: str, export_name: Union[str, None] = None, create_pdf: bool = True, quiet: bool = True) -> tuple[str, str]:
+    def export(self, output_dir: str, export_name: Union[str, None] = None, create_pdf: bool = True, project_root: str='.', quiet: bool = True) -> tuple[str, str]:
         """
         Exports the Typst code to a .typ file and optionally compiles it to PDF.
         Mirrors the behavior of LatexGenerator.export().
         """
         if export_name is None or len(export_name) == 0:
             export_name = self.fig.name
-        os.makedirs(path_output_dir, exist_ok=True)
-        path_typst = os.path.join(path_output_dir, export_name + '.typ')
-        path_pdf = os.path.join(path_output_dir, export_name + '.pdf')
+        os.makedirs(output_dir, exist_ok=True)
+        path_typst = os.path.join(output_dir, export_name + '.typ')
+        path_pdf = os.path.join(output_dir, export_name + '.pdf')
 
         with open(path_typst, 'w') as fp:
             fp.write('\n'.join(self.get_typst_code()))
@@ -54,7 +56,7 @@ class TypstGenerator:
         if typst_bin is None:
             raise FileNotFoundError('The "typst" executable was not found in PATH.')
 
-        cmd = [typst_bin, 'compile', path_typst, path_pdf]
+        cmd = [typst_bin, 'compile', '--root=' + project_root, '--input', 'dplot-disable-links=1', path_typst, path_pdf]
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE if quiet else sys.stdout,
@@ -107,6 +109,7 @@ class TypstGenerator:
             LineStyle.DOTTED: '"dotted"',
             LineStyle.DASHED: '"dashed"',
             LineStyle.DASH_DOTTED: '"dash-dotted"',
+            LineStyle.DASH_DOT_DOTTED: '(array: (3pt, 1.5pt, 1pt, 1.5pt, 1pt, 1.5pt), phase: 0pt)',
 
             # Custom patterns for variants
             LineStyle.DENSELY_DOTTED: '(array: (1pt, 1pt), phase: 0pt)',
@@ -115,6 +118,9 @@ class TypstGenerator:
             LineStyle.LOOSELY_DASHED: '(array: (6pt, 6pt), phase: 0pt)',
             LineStyle.DENSELY_DASH_DOTTED: '(array: (2pt, 1pt, 1pt, 1pt), phase: 0pt)',
             LineStyle.LOOSELY_DASH_DOTTED: '(array: (4pt, 2pt, 1pt, 2pt), phase: 0pt)',
+            LineStyle.DENSELY_DASH_DOTTED: '(array: (2pt, 1pt, 1pt, 1pt), phase: 0pt)',
+            LineStyle.DENSELY_DASH_DOT_DOTTED: '(array: (2pt, 1pt, 1pt, 1pt, 1pt, 1pt), phase: 0pt)',
+            LineStyle.LOOSELY_DASH_DOT_DOTTED: '(array: (4pt, 2pt, 1pt, 2pt, 1pt, 2pt), phase: 0pt)',
 
             # Fallback for others
             LineStyle.NONE: 'none'
@@ -150,11 +156,13 @@ class TypstGenerator:
             Marker.CROSS: ('lq.marks.x', 'none'),
             Marker.PLUS: ('lq.marks.at("+")', 'none'),
             Marker.ASTERISK: ('lq.marks.asterisk', 'none'),
+            Marker.SQUARE_FILLED: ('lq.marks.s', 'fill'),  # Filled square
+            Marker.TRIANGLE_FILLED: ('lq.marks.at("^")', 'fill'),  # Filled triangle
         }
         if marker not in Marker:
             raise ValueError(marker)
         if marker == Marker.NONE:
-            return 'mark: none'
+            return 'mark: none, every: (0,)'
 
         mark_func, inner_fill = mapping.get(marker, ('lq.marks.circle', 'none'))
         col_str = TypstGenerator.format_color(color)
@@ -291,7 +299,10 @@ class TypstGenerator:
                 x_tick_opts.append('subticks: none')
             else:
                 if asx.tick.major_values is not None:
-                    x_tick_opts.append('ticks: ' + self.__fmt_array(asx.tick.major_values))
+                    if type(asx.tick.major_values) is str:
+                        x_tick_opts.append(f'ticks: ({asx.tick.major_values})')
+                    else:
+                        x_tick_opts.append('ticks: ' + self.__fmt_array(asx.tick.major_values))
                 elif asx.tick.major_distance is not None:
                     x_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asx.tick.major_distance)})')
                 if asx.tick.minor_num > 0:
@@ -330,7 +341,10 @@ class TypstGenerator:
                 y_tick_opts.append('subticks: none')
             else:
                 if asy.tick.major_values is not None:
-                    y_tick_opts.append('ticks: ' + self.__fmt_array(asy.tick.major_values))
+                    if type(asy.tick.major_values) is str:
+                        y_tick_opts.append(f'ticks: ({asy.tick.major_values})')
+                    else:
+                        y_tick_opts.append('ticks: ' + self.__fmt_array(asy.tick.major_values))
                 elif asy.tick.major_distance is not None:
                     y_tick_opts.append(f'ticks: (step: {self.__fmt_flt(asy.tick.major_distance)})')
                 if asy.tick.minor_num > 0:
@@ -471,7 +485,10 @@ class TypstGenerator:
                 # Inject empty dummy plots into the primary diagram to generate unified legend entries
                 out += self.__create_plot_call(data, asx, asy, is_dummy=True)
 
-        out += self.__create_placements()
+        for placement in self.fig.place_data:
+            if placement.ax == ax and placement.ay == ay:
+                out += self.__create_placement(placement)
+
         out += self.fig.lilaq_commands
 
         out.append(')')
@@ -480,6 +497,7 @@ class TypstGenerator:
 
     def __create_plot_call(self, data: Data, asx: Union[AxisSetup, None], asy: Union[AxisSetup, None], is_dummy: bool = False) -> list[str]:
         """Translates data arrays and LineSetup into lq.plot() calls, applying axis scaling."""
+        n_points_x = len(data.dx)
         if is_dummy:
             # Empty coordinate arrays draw nothing on the canvas while preserving legend registration
             xs_str = "()"
@@ -489,6 +507,11 @@ class TypstGenerator:
             scale_y = asy.scale if asy else 1.0
             scaled_dx = [x * scale_x for x in data.dx]
             scaled_dy = [y * scale_y for y in data.dy]
+
+            if data.dpmm > 0:
+                scaled_dx, scaled_dy = reduce_curve(scaled_dx, scaled_dy, asx.limits, asy.limits, self.fig.width, self.fig.height, data.dpmm)
+                n_points_x = len(scaled_dx)
+
             xs_str = self.__fmt_array(scaled_dx)
             ys_str = self.__fmt_array(scaled_dy)
 
@@ -518,12 +541,12 @@ class TypstGenerator:
         # Omit step intervals on dummy plots to prevent step evaluations on empty arrays
         if not is_dummy and data.ls.marker != Marker.NONE:
             # repeat: after how many data points the next marker is placed
-            repeat_frac = float(len(data.dx)) / float(data.ls.marker_count)
+            repeat_frac = float(n_points_x) / float(data.ls.marker_count)
             repeat = int(math.floor(repeat_frac))
             # offset: number of data points to shift the markers to the right
             offset = int(round(data.ls.marker_phase * repeat_frac))
 
-            plot_args.append(f'every: range({offset}, {len(data.dx)}, step: {repeat}),')
+            plot_args.append(f'every: range({offset}, {n_points_x}, step: {repeat}),')
 
         lines = ['  lq.plot(']
         for pa in plot_args:
@@ -531,31 +554,31 @@ class TypstGenerator:
         lines.append('  ),')
         return lines
 
-    def __create_placements(self) -> list[str]:
-        def format_placement(p: Placement) -> str:
-            s = f'{p.x}, {p.y}'
-            if p.halign == HAlign.LEFT:
-                halign = 'left'
-            elif p.halign == HAlign.CENTER:
-                halign = 'center'
-            elif p.halign == HAlign.RIGHT:
-                halign = 'right'
-            else:
-                raise ValueError(f'Unknown halign: {p.halign}')
-            if p.valign == VAlign.TOP:
-                valign = 'top'
-            elif p.valign == VAlign.CENTER:
-                valign = 'horizon'
-            elif p.valign == VAlign.BOTTOM:
-                valign = 'bottom'
-            else:
-                raise ValueError(f'Unknown valign: {p.valign}')
-            s += f', align: {valign} + {halign}'
-            s += f', clip: {'true' if p.clip else 'false'}'
-            s += f', z-index: {p.z_index}'
-            return s
+    def __create_placement(self, p: Placement) -> list[str]:
+        x_min, x_max = self.fig.axes[p.ax].limits[0], self.fig.axes[p.ax].limits[1]
+        y_min, y_max = self.fig.axes[p.ay].limits[0], self.fig.axes[p.ay].limits[1]
+        x = x_min + p.x * (x_max - x_min)
+        y = y_min + p.y * (y_max - y_min)
 
-        return [
-            f'  lq.place({format_placement(p)})[{p.body}],'
-            for p in self.fig.place_data
-        ]
+        fmt = f'{x}, {y}'
+        if p.halign == HAlign.LEFT:
+            halign = 'left'
+        elif p.halign == HAlign.CENTER:
+            halign = 'center'
+        elif p.halign == HAlign.RIGHT:
+            halign = 'right'
+        else:
+            raise ValueError(f'Unknown halign: {p.halign}')
+        if p.valign == VAlign.TOP:
+            valign = 'top'
+        elif p.valign == VAlign.CENTER:
+            valign = 'horizon'
+        elif p.valign == VAlign.BOTTOM:
+            valign = 'bottom'
+        else:
+            raise ValueError(f'Unknown valign: {p.valign}')
+        fmt += f', align: {valign} + {halign}'
+        fmt += f', clip: {'true' if p.clip else 'false'}'
+        fmt += f', z-index: {p.z_index}'
+
+        return [f'  lq.place({fmt})[{p.body}],']

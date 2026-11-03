@@ -46,6 +46,17 @@ class RGBAColor:
         assert 0 <= self.b <= 255, f"Blue component {self.b} out of bounds [0, 255]"
         assert 0.0 <= self.a <= 1.0, f"Alpha component {self.a} out of bounds [0.0, 1.0]"
 
+    def _key(self) -> tuple[int, int, int, int]:
+        """Canonical form: alpha quantized to 8 bits, like in hex notation."""
+        return (self.r, self.g, self.b, round(self.a * 255))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RGBAColor):
+            return NotImplemented
+        return self._key() == other._key()
+
+    def __hash__(self) -> int:
+        return hash(self._key())
 
 class Color(Enum):
     """
