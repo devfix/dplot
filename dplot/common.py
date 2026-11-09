@@ -169,6 +169,12 @@ class LineSetup:
     # during output generation and float allows the user fine-tuning if wished
 
 
+@dataclass(frozen=True)
+class CurveCompression:
+    dpmm: float = 0
+    n_min: int = 11
+
+
 class Data:
     def __init__(
             self,
@@ -176,9 +182,11 @@ class Data:
             ay: YAxis,
             dx: TypeData,
             dy: TypeData,
+            *,
+            step: Union[str, none] = None,
             label: str = '',
             ls: Union[LineSetup, None] = None,
-            dpmm: float = 0
+            cc: Union[CurveCompression, None] = None
     ):
         """
         Construct new data set.
@@ -195,9 +203,10 @@ class Data:
         self.ay = ay
         self.dx = dx
         self.dy = dy
+        self.step = step
         self.label = label
         self.ls = LineSetup() if ls is None else ls
-        self.dpmm = dpmm
+        self.cc = CurveCompression() if cc is None else cc
         self._id = None
 
 @dataclass(frozen=True)

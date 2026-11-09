@@ -48,10 +48,12 @@ class Figure:
             ay: YAxis,
             dx: TypeData,
             dy: TypeData,
+            *,
+            step: Union[str, None] = None,
             label: str = '',
             ls: Union[LineSetup, None] = None,
-            dpmm: float = 0):
-        self.add_data(Data(ax, ay, dx, dy, label, ls, dpmm))
+            cc: Union[CurveCompression, None] = None):
+        self.add_data(Data(ax, ay, dx, dy, step=step, label=label, ls=ls, cc=cc))
 
     def add_placement(self, placement: Placement):
         self.place_data.append(placement)

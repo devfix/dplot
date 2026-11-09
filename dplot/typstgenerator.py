@@ -508,8 +508,8 @@ class TypstGenerator:
             scaled_dx = [x * scale_x for x in data.dx]
             scaled_dy = [y * scale_y for y in data.dy]
 
-            if data.dpmm > 0:
-                scaled_dx, scaled_dy = reduce_curve(scaled_dx, scaled_dy, asx.limits, asy.limits, self.fig.width, self.fig.height, data.dpmm)
+            if data.cc.dpmm > 0:
+                scaled_dx, scaled_dy = reduce_curve(scaled_dx, scaled_dy, asx.limits, asy.limits, self.fig.width, self.fig.height, data.cc.dpmm, n_min=data.cc.n_min)
                 n_points_x = len(scaled_dx)
 
             xs_str = self.__fmt_array(scaled_dx)
@@ -547,6 +547,9 @@ class TypstGenerator:
             offset = int(round(data.ls.marker_phase * repeat_frac))
 
             plot_args.append(f'every: range({offset}, {n_points_x}, step: {repeat}),')
+
+            if data.step is not None:
+                plot_args.append(f'step: {data.step},')
 
         lines = ['  lq.plot(']
         for pa in plot_args:
